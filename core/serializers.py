@@ -53,7 +53,7 @@ class CartItemSerializer(serializers.ModelSerializer):
     line_total = serializers.DecimalField(
         max_digits=10,
         decimal_places=2,
-        source='line_total',  # use model property
+         # use model property
         read_only=True
     )
 
@@ -66,13 +66,21 @@ class CartItemSerializer(serializers.ModelSerializer):
 class CartSerializer(serializers.ModelSerializer):
     items = CartItemSerializer(many=True, read_only=True)
     total = serializers.SerializerMethodField()
+    savings = serializers.SerializerMethodField()
 
     class Meta:
         model = Cart
-        fields = ['id', 'user', 'session_id', 'items', 'total']
+        fields = ['id', 'user', 'session_id', 'items', 'total','savings']
 
     def get_total(self, obj):
         return sum([item.quantity * item.price_snapshot for item in obj.items.all()])
+    
+    def get_savings(self, obj):
+        savings = 0
+        for item in obj.items.all():
+            if item.product.old_price:
+                savings += (float(item.product.old_price) - float(item.price_snapshot)) * item.quantity
+        return savings
 
 
 

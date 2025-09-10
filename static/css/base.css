@@ -1,3 +1,4 @@
+
 /* Sticky header look */
 header {
   z-index: 1030;
@@ -59,13 +60,14 @@ header .nav-link:last-child {
 
 
 
-
-
-
 /*foooter*/
 
 .footer {
+  background: #f8f9fa;
   font-size: 14px;
+  padding: 1rem;
+  text-align: center;
+  border-top: 1px solid #ddd;
 }
 
 .footer h6 {

@@ -1,257 +1,229 @@
-// home.js - load products, render cards, add-to-cart + wishlist actions
-document.addEventListener("DOMContentLoaded", function () {
+// ------------------- CONFIG -------------------
+const PRODUCTS_URL = "/api/products/";
+const ADD_TO_CART_URL = "/api/cart/add/";
 
-  // Config - change URLs if your APIs differ
-  const PRODUCTS_URL = "/api/products/";
-  const ADD_TO_CART_URL = "/api/cart/add/";
-  const CART_URL = "/api/cart/";
-  const WISHLIST_URL = "/api/wishlist/";   // POST add {product: id}, DELETE remove /api/wishlist/<id>/
-
-  // small helper to read Django CSRF cookie
-  function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== "") {
-      const cookies = document.cookie.split(";");
-      for (let i = 0; i < cookies.length; i++) {
-        const cookie = cookies[i].trim();
-        if (cookie.substring(0, name.length + 1) === (name + "=")) {
-          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-          break;
-        }
+// small helper to read Django CSRF cookie
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== "") {
+    const cookies = document.cookie.split(";");
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === name + "=") {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
       }
     }
-    return cookieValue;
   }
-  const csrftoken = getCookie("csrftoken");
+  return cookieValue;
+}
+const csrftoken = getCookie("csrftoken");
 
-  // update cart badge from GET /api/cart/
-  function refreshCartCount() {
-    fetch(CART_URL, { credentials: 'same-origin' })
-      .then(r => r.ok ? r.json() : Promise.reject(r))
-      .then(data => {
-        const count = data.items ? data.items.length : 0;
-        const el = document.getElementById("cart-count");
-        if (el) el.textContent = count;
-      }).catch(()=>{ /* ignore unauthenticated */ });
-  }
+// ------------------- ACTIONS -------------------
 
-  // Add product to cart (productId, qty)
-  function addToCart(productId, qty=1, btn) {
-    // require login - if server returns 401/403 we'll redirect
-    fetch(ADD_TO_CART_URL, {
-      method: "POST",
-      credentials: 'same-origin',
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": csrftoken
-      },
-      body: JSON.stringify({ product: productId, quantity: qty })
-    })
-    .then(res => {
-      if (res.status === 401 || res.status === 403) {
-        // not logged in -> redirect to login
-        window.location.href = "/login/?next=" + encodeURIComponent(window.location.pathname);
-        return;
+// Add product to cart
+function addToCart(productId, qty = 1, btn) {
+  fetch("/api/cart/", {
+    method: "POST",   // 👈 must be POST
+    credentials: "same-origin",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": csrftoken,
+    },
+    body: JSON.stringify({
+      product: productId,  // 👈 check if your API expects "product" or "product_id"
+      quantity: qty
+    }),
+  })
+    .then(async (res) => {
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Server error ${res.status}: ${errText}`);
       }
-      if (!res.ok) return res.json().then(j => Promise.reject(j));
       return res.json();
     })
-    .then(data => {
+    .then(() => {
+
       refreshCartCount();
+
       if (btn) {
-        btn.classList.remove("btn-outline-danger");
-        btn.classList.add("btn-danger");
         btn.textContent = "Added";
-        setTimeout(()=>{ btn.classList.remove("btn-danger"); btn.classList.add("btn-outline-danger"); btn.textContent = "Add"; }, 1100);
+        btn.classList.replace("btn-outline-danger", "btn-success");
+        setTimeout(() => {
+          btn.textContent = "Add";
+          btn.classList.replace("btn-success", "btn-outline-danger");
+        }, 1200);
       }
     })
-    .catch(err=>{
-      console.error("Add to cart error", err);
-      alert("Couldn't add to cart. Try login or check server.");
+    .catch((err) => {
+      console.error("Add to cart error:", err);
+      alert("Couldn't add to cart → " + err.message);
     });
-  }
+}
 
-  // Wishlist toggle (simple: POST to add, DELETE to remove)
-  function toggleWishlist(productId, iconEl) {
-    // decide from icon state
-    const active = iconEl.dataset.wish === "1";
-    if (!active) {
-      // add
-      fetch(WISHLIST_URL, {
-        method: "POST",
-        credentials: 'same-origin',
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": csrftoken
-        },
-        body: JSON.stringify({ product: productId })
-      }).then(r => {
-        if (r.status === 401 || r.status === 403) {
-          window.location.href = "/login/?next=" + encodeURIComponent(window.location.pathname);
-          return;
-        }
-        if (!r.ok) return r.json().then(j => Promise.reject(j));
-        return r.json();
-      }).then(data=>{
-        iconEl.dataset.wish = "1";
-        iconEl.classList.add("text-danger");
-      }).catch(err=>{
-        console.error("wishlist add", err);
-      });
-    } else {
-      // remove - we assume endpoint DELETE /api/wishlist/<id>/ or send product id to delete endpoint (change if different)
-      // try both: if the icon has data-wish-id use it, else use productId in a delete path
-      const wishId = iconEl.dataset.wishId;
-      const delUrl = wishId ? `${WISHLIST_URL}${wishId}/` : `${WISHLIST_URL}${productId}/`;
-      fetch(delUrl, {
-        method: "DELETE",
-        credentials: 'same-origin',
-        headers: { "X-CSRFToken": csrftoken }
-      }).then(r => {
-        if (r.status === 401 || r.status === 403) {
-          window.location.href = "/login/?next=" + encodeURIComponent(window.location.pathname);
-          return;
-        }
-        if (!r.ok) return r.json().then(j => Promise.reject(j));
-        iconEl.dataset.wish = "0";
-        iconEl.classList.remove("text-danger");
-      }).catch(err=>{
-        console.error("wishlist remove", err);
-      });
-    }
-  }
 
-  // create a single product card DOM element
-  function createProductCard(product) {
-    // compute discount
-    let discount = null;
-    if (product.old_price && parseFloat(product.old_price) > 0 && parseFloat(product.old_price) > parseFloat(product.price)) {
-      discount = Math.round(((parseFloat(product.old_price) - parseFloat(product.price)) / parseFloat(product.old_price)) * 100);
-    }
+// Save for later (UI only)
+function saveForLaterUI(btn) {
+  btn.classList.toggle("btn-outline-secondary");
+  btn.classList.toggle("btn-warning");
+}
 
-    // image: prefer first of product.images array if present
-    let imageUrl = "";
-    if (product.images && product.images.length) {
-      // product.images items may have .images (see serializer) or be direct URL
-      const first = product.images[0];
-      imageUrl = first && first.images ? first.images : (first.url || "");
-    }
-    if (!imageUrl) imageUrl = product.image || "/static/images/product-placeholder.png";
 
-    // pack options come from product.highlights or fallback
-    const packs = (product.highlights && product.highlights.length) ? product.highlights : ["250 g", "500 g", "1 pc"];
 
-    // create element
-    const wrapper = document.createElement("div");
-    wrapper.className = "product-card";
-
-    wrapper.innerHTML = `
-      <div class="img-wrap">
-        <button class="wish-btn" title="Save for later" data-product-id="${product.id}" data-wish="0">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 1 0-7.8 7.8l1 1L12 21l8.8-8.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>
-        </button>
-
-        ${ discount ? `<span class="discount-badge">${discount}% OFF</span>` : "" }
-        <img src="${imageUrl}" alt="${product.title}">
-      </div>
-
-      <div class="card-body">
-        <div class="brand">fresho!</div>
-        <div class="title">${product.title}</div>
-
-        <div class="pack-dropdown">
-          <div class="dropdown">
-            <button class="btn btn-sm btn-outline-secondary dropdown-toggle w-100" type="button" data-bs-toggle="dropdown">
-              ${packs[0]}
-            </button>
-            <ul class="dropdown-menu">
-              ${packs.map(p => `
-                <li>
-                  <a class="dropdown-item pack-option" href="#" data-pack="${p}">
-                    <div class="d-flex justify-content-between align-items-center">
-                      <div>
-                        <small class="text-success">${discount ? discount + "% OFF" : ""}</small>
-                        <div class="fw-bold">₹${product.price}</div>
-                      </div>
-                      <div class="delivery-chip">⚡ 9 MINS</div>
-                    </div>
-                  </a>
-                </li>`).join("")}
-            </ul>
-          </div>
-        </div>
-
-        <div class="price-row">
-          <div class="price-current">₹${product.price}</div>
-          ${product.old_price ? `<div class="price-old">₹${product.old_price}</div>` : ""}
-        </div>
-
-        <button class="sasta-btn">Har Din Sasta! <span style="float:right">▾</span></button>
-
-        <div class="bottom-row">
-          <div class="bookmark-btn" title="Bookmark / Save"></div>
-          <button class="add-btn" data-product-id="${product.id}">Add</button>
-        </div>
-      </div>
-    `;
-
-    // events: add to cart
-    const addBtn = wrapper.querySelector(".add-btn");
-    addBtn.addEventListener("click", function() {
-      const productId = this.dataset.productId;
-      addToCart(productId, 1, this);
-    });
-
-    // wishlist button
-    const wishBtn = wrapper.querySelector(".wish-btn");
-    wishBtn.addEventListener("click", function(e) {
-      e.preventDefault();
-      const pid = this.dataset.productId;
-      toggleWishlist(pid, this);
-    });
-
-    // pack option clicks update the text on button and (if you want) recalc price
-    wrapper.querySelectorAll(".pack-option").forEach(a => {
-      a.addEventListener("click", function(e){
-        e.preventDefault();
-        const pack = this.dataset.pack;
-        const btn = wrapper.querySelector(".pack-dropdown .dropdown-toggle");
-        btn.textContent = pack;
-        // optionally recalc price here if you have per-pack prices
-      });
-    });
-
-    return wrapper;
-  }
-
-  // fetch & render
-  const productsRow = document.getElementById("products-row");
-  fetch(PRODUCTS_URL, { credentials: 'same-origin' })
+// Refresh cart count badge
+function refreshCartCount() {
+  fetch("/api/cart/", { credentials: "same-origin" })
     .then(res => res.json())
-    .then(list => {
-      // if your API wraps results e.g. { results: [...] } handle that
-      const products = Array.isArray(list) ? list : (list.results || []);
-      products.forEach(p => {
-        const card = createProductCard(p);
-        const col = document.createElement("div");
-        col.className = "col-auto";
-        col.appendChild(card);
-        productsRow.appendChild(col);
-      });
+    .then(data => {
+      const count = data.items ? data.items.length : 0;
+      const el = document.getElementById("cart-count");
+      if (el) el.textContent = count;
     })
-    .catch(err => {
-      console.error("Error loading products:", err);
-      productsRow.innerHTML = "<div class='text-muted p-3'>Failed to load products.</div>";
+    .catch(err => console.error("Cart fetch failed", err));
+}
+
+
+
+// ------------------- UI RENDER -------------------
+
+function createProductCard(product) {
+  // Discount %
+  let discount = null;
+  if (
+    product.old_price &&
+    parseFloat(product.old_price) > parseFloat(product.price)
+  ) {
+    discount = Math.round(
+      ((parseFloat(product.old_price) - parseFloat(product.price)) /
+        parseFloat(product.old_price)) *
+        100
+    );
+  }
+
+  // Image
+  let imageUrl = product.image || "/static/images/product-placeholder.png";
+
+  // Pack options
+  const packs =
+    product.highlights && product.highlights.length
+      ? product.highlights
+      : ["500 g", "1 kg", "250 g"];
+
+  // Card wrapper
+  const wrapper = document.createElement("div");
+  wrapper.className = "product-card";
+
+  wrapper.innerHTML = `
+    <div class="img-wrap">
+      ${discount ? `<span class="discount-badge">${discount}% OFF</span>` : ""}
+      <a href="/product/${product.id}/">
+        <img src="${imageUrl}" alt="${product.title}">
+      </a>
+    </div>
+
+    <div class="card-body">
+      <div class="brand">${product.brand || "fresho!"}</div>
+      <a href="/product/${product.id}/" class="title text-truncate">
+        ${product.title}
+      </a>
+
+      <select class="form-select form-select-sm mt-2">
+        ${packs.map((p) => `<option>${p}</option>`).join("")}
+      </select>
+
+      <div class="price-row mt-2">
+        <div class="price-current">₹${product.price}</div>
+        ${
+          product.old_price
+            ? `<div class="price-old">₹${product.old_price}</div>`
+            : ""
+        }
+      </div>
+
+      <button class="sasta-btn btn btn-sm btn-light w-100 mt-2">
+        Har Din Sasta! <span style="float:right">▾</span>
+      </button>
+
+      <div class="bottom-row d-flex justify-content-between align-items-center mt-2">
+        <button class="save-btn btn btn-outline-secondary btn-sm">
+          <i class="bi bi-bookmark"></i>
+        </button>
+        <button class="add-btn btn btn-outline-danger btn-sm" data-product-id="${
+          product.id
+        }">
+          Add
+        </button>
+      </div>
+    </div>
+  `;
+
+  // Events
+  wrapper.querySelector(".add-btn").addEventListener("click", function () {
+    addToCart(product.id, 1, this);
+  });
+
+  wrapper.querySelector(".save-btn").addEventListener("click", function () {
+    saveForLaterUI(this); // UI only
+  });
+
+  return wrapper;
+}
+
+// ------------------- INIT -------------------
+
+document.addEventListener("DOMContentLoaded", function () {
+  const productsRow = document.getElementById("products-row");
+  const prevBtn = document.getElementById("prevBtn");
+  const nextBtn = document.getElementById("nextBtn");
+
+  let currentPage = 0;
+  const itemsPerPage = 4;
+  let cardWidth = 0;
+
+  fetch(PRODUCTS_URL, { credentials: "same-origin" })
+    .then((res) => res.json())
+    .then((products) => {
+      products.forEach((p) => {
+        const card = createProductCard(p);
+        productsRow.appendChild(card);
+      });
+
+     // compute card width dynamically (with margin)
+      const firstCard = productsRow.querySelector(".product-card");
+      const style = window.getComputedStyle(firstCard);
+      const marginRight = parseInt(style.marginRight);
+      const cardWidth = firstCard.offsetWidth + marginRight;
+
+        // fix viewport width = exactly 4 cards
+      const viewport = document.querySelector(".products-viewport");
+      viewport.style.width = cardWidth * itemsPerPage + "px";
+
+        // max pages
+      const maxPage = Math.ceil(products.length / itemsPerPage) - 1;
+
+
+      // Next
+      nextBtn.addEventListener("click", () => {
+        if (currentPage < maxPage) {
+          currentPage++;
+          productsRow.style.transform = `translateX(-${
+            cardWidth * itemsPerPage * currentPage
+          }px)`;
+          prevBtn.disabled = false;
+          if (currentPage === maxPage) nextBtn.disabled = true;
+        }
+      });
+
+      // Prev
+      prevBtn.addEventListener("click", () => {
+        if (currentPage > 0) {
+          currentPage--;
+          productsRow.style.transform = `translateX(-${
+            cardWidth * itemsPerPage * currentPage
+          }px)`;
+          nextBtn.disabled = false;
+          if (currentPage === 0) prevBtn.disabled = true;
+        }
+      });
     });
-
-  // scroll controls
-  document.getElementById("nextBtn").addEventListener("click", () => {
-    productsRow.scrollBy({ left: 280, behavior: "smooth" });
-  });
-  document.getElementById("prevBtn").addEventListener("click", () => {
-    productsRow.scrollBy({ left: -280, behavior: "smooth" });
-  });
-
-  // init cart count
-  refreshCartCount();
 });

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Offers</h2>
+<div class="row">
+  {% for product in products %}
+    <div class="col-md-3">
+      <div class="card mb-3">
+        {% if product.image %}
+          <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}">
+        {% endif %}
+        <div class="card-body">
+          <h5>{{ product.name }}</h5>
+          <p>{{ product.weight }}</p>
+          <p>
+            <strong>₹{{ product.price }}</strong>
+            <del class="text-muted">₹{{ product.offer_price }}</del>
+            <span class="badge bg-success">{{ product.discount_percent }}% OFF</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  {% empty %}
+    <p>No offers available right now.</p>
+  {% endfor %}
+</div>
+{% endblock %}

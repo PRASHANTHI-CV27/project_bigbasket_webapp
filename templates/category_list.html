@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+
+
+<div class="container my-4">
+  <div class="row">
+    <!-- SIDEBAR -->
+    <aside class="col-lg-3 mb-4">
+      <div class="card shadow-sm p-3">
+        <h6 class="fw-bold mb-3">Shop by Category</h6>
+
+        <ul class="list-unstyled mb-3">
+          <li class="mb-2">
+            <a href="{% url 'product-list' %}" class="text-decoration-none {% if not selected_category %}text-success fw-bold{% endif %}">All</a>
+          </li>
+          {% for c in categories %}
+            <li class="mb-2">
+              <a href="{% url 'product-list' %}?category={{ c.id }}"
+                 class="text-decoration-none {% if selected_category and selected_category.id == c.id %}text-success fw-bold{% endif %}">
+                {{ c.title }}
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+
+        <hr>
+
+        <h6 class="fw-bold mb-2">Refined by</h6>
+        <p class="small text-muted mb-1">Product Rating</p>
+        <div class="mb-3">
+          <label class="d-block small"><input type="checkbox"> ⭐⭐⭐⭐⭐</label>
+          <label class="d-block small"><input type="checkbox"> ⭐⭐⭐⭐</label>
+          <label class="d-block small"><input type="checkbox"> ⭐⭐⭐</label>
+        </div>
+
+        <h6 class="fw-bold mb-2">Brands</h6>
+        <div class="mb-2">
+          <input class="form-control form-control-sm mb-2" placeholder="Search brands" />
+          <div style="max-height: 160px; overflow:auto;">
+            <label class="d-block small"><input type="checkbox"> Adidas</label>
+            <label class="d-block small"><input type="checkbox"> Puma</label>
+            <label class="d-block small"><input type="checkbox"> Reebok</label>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN: Products -->
+    <main class="col-lg-9">
+      <!-- Header: category title + sort -->
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h5 class="fw-bold mb-0">
+            {% if selected_category %}{{ selected_category.title }}{% else %}Products{% endif %}
+            <small class="text-muted">({{ page_obj.paginator.count }})</small>
+          </h5>
+          {% if query_params.q %}
+            <small class="text-muted">Search: "{{ query_params.q }}"</small>
+          {% endif %}
+        </div>
+
+        <form method="get" class="d-flex align-items-center" style="gap: .5rem;">
+          <label class="small mb-0">Sort</label>
+          <select name="sort" class="form-select form-select-sm" onchange="this.form.submit()">
+            <option value="">Relevance</option>
+            <option value="new" {% if query_params.sort == 'new' %}selected{% endif %}>Newest</option>
+            <option value="price_asc" {% if query_params.sort == 'price_asc' %}selected{% endif %}>Price: Low to High</option>
+            <option value="price_desc" {% if query_params.sort == 'price_desc' %}selected{% endif %}>Price: High to Low</option>
+          </select>
+
+          {# Preserve other query params when changing sort #}
+          {% for k,v in query_params.items %}
+            {% if k != 'sort' and k != 'page' %}
+              <input type="hidden" name="{{ k }}" value="{{ v }}">
+            {% endif %}
+          {% endfor %}
+        </form>
+      </div>
+
+      <!-- Product Grid -->
+      <div class="row g-3">
+        {% for p in products %}
+          <div class="col-6 col-md-4 col-lg-3">
+            <div class="card shadow-sm h-100">
+              <div class="position-relative">
+                {% if p.image %}
+                  <img src="{{ p.image.url }}" class="card-img-top p-3" alt="{{ p.title }}" style="object-fit:contain; height:220px;">
+                {% else %}
+                  <img src="{% static 'images/placeholder.png' %}" class="card-img-top p-3" alt="no image" style="object-fit:contain; height:220px;">
+                {% endif %}
+
+                {% if p.old_price and p.old_price > p.price %}
+                  <span class="badge bg-success position-absolute top-0 start-0 m-2">
+                    {{ p.get_dpercentage|floatformat:0 }}% OFF
+                  </span>
+                {% endif %}
+
+                <span class="badge bg-warning text-dark position-absolute bottom-0 end-0 m-2">17 MINS</span>
+              </div>
+
+              <div class="card-body p-2 d-flex flex-column">
+                <p class="text-muted small mb-1">{% if p.user %}{{ p.user.username }}{% else %}fresho!{% endif %}</p>
+
+                <h6 class="card-title small mb-2" style="min-height:44px;">{{ p.title|truncatechars:70 }}</h6>
+
+                <select class="form-select form-select-sm mb-2">
+                  <option>500 g</option>
+                  <option>1 kg</option>
+                </select>
+
+                <div class="mb-2">
+                  <span class="fw-bold">₹{{ p.price }}</span>
+                  {% if p.old_price and p.old_price > p.price %}
+                    <span class="text-muted text-decoration-line-through ms-2">₹{{ p.old_price }}</span>
+                  {% endif %}
+                </div>
+
+                <div class="mt-auto">
+                  <div class="mb-2">
+                    <button class="btn btn-sm btn-light border text-success w-100">Har Din Sasta!</button>
+                  </div>
+
+                  <div class="d-flex gap-2">
+                    <button class="btn btn-outline-secondary btn-sm" title="Save"><i class="bi bi-bookmark"></i></button>
+                    <button class="btn btn-danger btn-sm flex-grow-1">Add</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        {% empty %}
+          <div class="col-12">
+            <div class="alert alert-info">No products found.</div>
+          </div>
+        {% endfor %}
+      </div>
+
+      <!-- Pagination: preserve query params -->
+      {% if page_obj.has_other_pages %}
+        <nav class="mt-4">
+          <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?{% for k,v in query_params.items %}{% if k != 'page' %}{{ k }}={{ v|urlencode }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}">Previous</a>
+              </li>
+            {% else %}
+              <li class="page-item disabled"><span class="page-link">Previous</span></li>
+            {% endif %}
+
+            {# show nearby page numbers #}
+            {% for num in page_obj.paginator.page_range %}
+              {% if num >= page_obj.number|add:'-2' and num <= page_obj.number|add:'2' %}
+                {% if num == page_obj.number %}
+                  <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% else %}
+                  <li class="page-item">
+                    <a class="page-link" href="?{% for k,v in query_params.items %}{% if k != 'page' %}{{ k }}={{ v|urlencode }}&{% endif %}{% endfor %}page={{ num }}">{{ num }}</a>
+                  </li>
+                {% endif %}
+              {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?{% for k,v in query_params.items %}{% if k != 'page' %}{{ k }}={{ v|urlencode }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}">Next</a>
+              </li>
+            {% else %}
+              <li class="page-item disabled"><span class="page-link">Next</span></li>
+            {% endif %}
+          </ul>
+        </nav>
+      {% endif %}
+    </main>
+  </div>
+</div>
+{% endblock %}
+
+
+
+
+
+
+
+

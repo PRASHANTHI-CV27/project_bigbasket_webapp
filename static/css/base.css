@@ -1,0 +1,78 @@
+/* Sticky header look */
+header {
+  z-index: 1030;
+  border-bottom: 1px solid #eee;
+   
+}
+
+header .nav-link {
+  margin-right: 30px;
+  padding: 0 10px;
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+}
+header .nav-link:last-child {
+  margin-right: 0;  /* remove space after the last item */
+}
+
+#cart-count {
+  font-size: 12px;
+  padding: 4px 6px;
+}
+
+/* Make Smart Basket and Offers look more like BigBasket */
+.navbar .btn-outline-success {
+  border-radius: 20px;
+  font-weight: 500;
+  padding: 4px 14px;
+  font-size: 14px;
+}
+/* Common wrapper for consistent spacing site-wide */
+.page-container {
+  max-width: 1400px;   /* control site width */
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 150px;  /* same spacing left/right */
+  padding-right: 150px;
+}
+
+#categoryDropdown {
+  background-color: #6c9e11;   /* BigBasket green */
+  border-color: #6c9e11;
+  color: #fff;
+  font-weight: 600;
+  padding: 8px 20px;
+  border-radius: 4px;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*foooter*/
+
+.footer {
+  font-size: 14px;
+}
+
+.footer h6 {
+  font-size: 15px;
+  margin-bottom: 1rem;
+}
+
+
+
+

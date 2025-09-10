@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Home — My Basket{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/index.css' %}">
+{% endblock %}
+
+
+
+{% block content %}
+
+<!-- 🔹 Promo clickable banners -->
+<div class="promo-links d-flex justify-content-between mb-4">
+  <a href="/category/eggs-meat-fish/" class="promo-item">
+    <img src="{% static 'images/banners/eggsB.webp' %}" alt="Eggs, Meat and Fish">
+  </a>
+  <a href="/neupass/" class="promo-item">
+    <img src="{% static 'images/banners/Neupass.webp' %}" alt="NeuPass">
+  </a>
+  <a href="/category/ayurveda/" class="promo-item">
+    <img src="{% static 'images/banners/Ayurveda.webp' %}" alt="Ayurveda">
+  </a>
+  <a href="/deals/" class="promo-item">
+    <img src="{% static 'images/banners/Deals of weak.webp' %}" alt="Deals of the Week">
+  </a>
+  <a href="/combo-store/" class="promo-item">
+    <img src="{% static 'images/banners/combo.webp' %}" alt="Combo Store">
+  </a>
+</div>
+
+
+
+<!-- 🔹 Products section -->
+<div class="my-4 product-section">
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4 class="mb-0">My Smart Basket</h4>
+  <div>
+    <a href="/products/" class="me-3">View All</a>
+    <button class="btn btn-light btn-sm" id="prevBtn">&#8249;</button>
+    <button class="btn btn-light btn-sm" id="nextBtn">&#8250;</button>
+  </div>
+</div>
+
+<div class="row flex-nowrap overflow-hidden" id="products-row">
+  <!-- JS will insert product cards -->
+</div>
+</div>
+{% endblock %}
+
+
+
+{% block extra_js %}
+<script src="{% static 'js/index.js' %}"></script>
+{% endblock %}

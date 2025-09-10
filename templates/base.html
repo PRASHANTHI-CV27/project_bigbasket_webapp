@@ -1,0 +1,218 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}My Basket{% endblock %}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+  {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+
+
+  <header class="shadow-sm bg-white sticky-top">
+  <div class="page-container">
+
+  <!-- Top row -->
+  <div  class=" py-2 d-flex align-items-center justify-content-between">
+    <a href="/" class="navbar-brand fw-bold text-success">
+      <img src="{% static 'images/logo.png' %}" alt="MyBasket" height="40">
+    </a>
+
+    <!-- Search bar -->
+    <form class="flex-grow-1 mx-3" action="/search/" method="get">
+      <input type="text" name="q" class="form-control" placeholder="Search for products...">
+    </form>
+
+    <!-- User/Login -->
+    <a href="/login/" class="btn btn-outline-secondary me-2">Login / Signup</a>
+
+    <!-- Cart -->
+    <a href="/cart/" class="btn btn-outline-primary position-relative">
+      🛒 Cart
+      <span id="cart-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">0</span>
+    </a>
+  </div>
+
+  <!-- Second row -->
+  {% comment %} <nav class="navbar navbar-expand-lg navbar-light border-top d-flex justify-content-between align-items-center"> {% endcomment %}
+  <div class=" d-flex justify-content-between align-items-center"> 
+
+    <!-- Left side -->
+    <div class="d-flex align-items-center flex-wrap">
+
+      <!-- Shop by Category -->
+      <div class="dropdown me-3">
+        <button class="btn btn-success dropdown-toggle" type="button" id="categoryDropdown" data-bs-toggle="dropdown">
+          Shop by Category
+        </button>
+        <ul id="category-list" class="dropdown-menu" aria-labelledby="categoryDropdown">
+          <!-- Categories will load via JS -->
+        </ul>
+      </div>
+
+      <!-- Quick links -->
+      <div class="d-flex align-items-center">
+        <a href="/category/1/" class="nav-link">Exotic Fruits & Vegetables</a>
+        <a href="/category/2/" class="nav-link">Tea</a>
+        <a href="/category/3/" class="nav-link">Ghee</a>
+        <a href="/category/3/" class="nav-link">Nandini</a>
+        <a href="/category/4/" class="nav-link">Fresh Vegetables</a>
+
+        <!-- More categories dropdown -->
+        <div class="dropdown">
+          <a href="#" class="nav-link dropdown-toggle" id="moreDropdown" data-bs-toggle="dropdown">
+            &raquo;
+          </a>
+          <ul class="dropdown-menu" aria-labelledby="moreDropdown">
+            <li><a class="dropdown-item" href="/category/5/">Milk</a></li>
+            <li><a class="dropdown-item" href="/category/6/">Yogurt & Shrikhand</a></li>
+            <li><a class="dropdown-item" href="/category/7/">Chocolates</a></li>
+            <li><a class="dropdown-item" href="/category/8/">Cup Noodles</a></li>
+            <li><a class="dropdown-item" href="/category/9/">Hair Care</a></li>
+            <li><a class="dropdown-item" href="/category/10/">Fresh Chicken</a></li>
+            <li><a class="dropdown-item" href="/category/11/">Eggs</a></li>
+            <li><a class="dropdown-item" href="/category/12/">Honey</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right side -->
+    <div class="d-flex align-items-center ms-3 ps-3 border-start">
+      <a href="/smart-basket/" class="btn btn-sm btn-outline-success me-2">Smart Basket</a>
+      <a href="/offers/" class="btn btn-sm btn-outline-success">Offers</a>
+    </div>
+
+  </div>
+</nav>
+
+</header>
+
+  <!-- ================main page============ -->
+  <main class="page-container my-4">
+    {% block content %}{% endblock %}
+  </main>
+
+
+
+   <!-- ==================Footer=================== -->
+  <footer class="footer bg-dark text-white p-5 mt-5">
+  <div class="page-container">
+      <!-- Section 1 -->
+    <div class="row pb-4 border-bottom border-light border-dotted">
+      <div class="col-md-4">
+        <h6 class="fw-bold">Bigbasket</h6>
+        <ul class="list-unstyled small">
+          <li><a href="/about/" class="text-white-50 text-decoration-none">About Us</a></li>
+          <li><a href="/news/" class="text-white-50 text-decoration-none">In News</a></li>
+          <li><a href="/green/" class="text-white-50 text-decoration-none">Green bigbasket</a></li>
+          <li><a href="/privacy/" class="text-white-50 text-decoration-none">Privacy Policy</a></li>
+          <li><a href="/affiliate/" class="text-white-50 text-decoration-none">Affiliate</a></li>
+          <li><a href="/terms/" class="text-white-50 text-decoration-none">Terms and Conditions</a></li>
+          <li><a href="/bbdaily/" class="text-white-50 text-decoration-none">bb Daily</a></li>
+        </ul>
+      </div>
+
+      <div class="col-md-4">
+        <h6 class="fw-bold">Help</h6>
+        <ul class="list-unstyled small">
+          <li><a href="/faqs/" class="text-white-50 text-decoration-none">FAQs</a></li>
+          <li><a href="/contact/" class="text-white-50 text-decoration-none">Contact Us</a></li>
+          <li><a href="/wallet-faqs/" class="text-white-50 text-decoration-none">bb Wallet FAQs</a></li>
+          <li><a href="/wallet-tc/" class="text-white-50 text-decoration-none">bb Wallet T&Cs</a></li>
+          <li><a href="/vendor-connect/" class="text-white-50 text-decoration-none">Vendor Connect</a></li>
+        </ul>
+      </div>
+
+      <div class="col-md-4 text-center">
+        <img src="{% static 'images/logo.png' %}" alt="BigBasket" height="40">
+        <div class="mt-3">
+          <a href="#" class="text-white me-3"><i class="bi bi-facebook"></i></a>
+          <a href="#" class="text-white me-3"><i class="bi bi-instagram"></i></a>
+          <a href="#" class="text-white me-3"><i class="bi bi-twitter"></i></a>
+          <a href="#" class="text-white"><i class="bi bi-pinterest"></i></a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="text-center py-4 border-bottom border-light border-dotted">
+      <h6 class="fw-bold mb-3">Cities We Serve</h6>
+      <p class="small text-white-50 cities-list">
+        Abhor | Abu Road | Achampet | Achrol | Adampur | Addanki | Adilabad | Adimali |
+         Adoni | Adoor | Afzalpur | Agali | Agartala | Agra | Ahmednagar | Ahmedabad | Ahmedabad Rural | 
+         Aizawl | Ajmer | Aklera | Akola | Alair | Alakode | Aland | Alappuzha | Aligarh | Aligarh District 
+         | Alipurduar | Alirajpur | Allagadda | Allahabad | Alleppey | Almora | Alnavar | Alote | Alur | Aluva 
+         | Alwar | Amalapuram | Amangal | Amangudi | Amarapuram | Amaravathi | Amarpatan | Amravati | Ambala | 
+         Ambasamudram | Ambuj Nagar | Amethi District | Amiliya | Amla | Amravati | Amreli | Amritsar |
+          Amroha District | Anand | Anandnagar | Anandpur Sahib | Anantapur | Anantapur District | Anantnag | 
+          Andaman & Nicobar | Angul | Anjumoorthy | Ankleshwar | Ankola | Annur | Anpara | Anthiyour | Anuppur |
+           Anupshahar | Aonla | Arakkonam | Araku | Arambag | Arani | Araria | Areacode | Arimbur | Ariyalur | Armoor |
+            Arrah | Arsikere | Aruppukottai | Arwal | Asansol | Ashok Nagar | Ashta | Asifabad | Asika | Asind | Assaigoli | 
+            Astaranga | Aswaraopeta | Atarra | Athagad | Athani | Atmakur | Atmakur-AP | Atmakur-TS | Attingal | Attur | Aul 
+            | Aurangabad | Aurad | Auriaya | Azamgarh | Azhagappapuram | B Kotkhatoa | Babasagar | Baberu | Babrala | Babujang |
+             Bachhrawan | Badagauda | Badamba | Badami | Baddi | Badlapur | Badnagar | Badoi | Bagalkot | Baghaat District | Bagdogra
+              | Baghaur | Bagodar | Bahadurgarh | Baharampur | Baheri | Bahraich | Bahupara | Baihar | Baijnath-UK | Bailhongal | Bairgania 
+              | Baisi | Bajore | Bakewar | Bakhtiarpur | Balaghat | Balangir | Balaran | Balasore | Balesar | Balijipeta | Ballia | Balliguda 
+              | Balotra | Balrampur | Balussery | Bamra | Banda | Bandikui | Bangalore | Bangalore Rural | Bangana | Bangaon | Bangarpet | Banka | 
+              Bankapura | Bankura | Bansi | Bantwal | Bapatla | Barabanki District | Barakar | Baran | Barauni | Bardhaman | Bardoli | Bareilly | Barh 
+              | Barhalganj | Barhi | Bari Sadri | Baripada | Bariya | Barmer | Barnala | Barodia | Barpeta | Barwani | Basavakalyan | Basavana Bagewadi
+               | Basirhat | Bassi | Bastar | Basti | Batala | Bathinda | Bavla | Bayana | Beawar | Begowal | Begumganj | Begusarai | Behrampur | 
+               Bejjanki | Belgaum | Bellampalli | Bellary | Belthangady | Belur | Benipatti | Bhadrachalam | Bhadrak | Bhagalpur | Bhainsa | Bhilai
+                | Bhilwara | Bhimadole | Bhimavaram | Bhind | Bhinga | Bhinmal | Bhiwadi | Bhiwani | Bhopal | Bhopal Rural | Bhore | Bhuban | 
+                Bhubaneswar | Bhubaneswar-Cuttack | Bhubaneswar Rural | Bhuj | Bhupalpally | Bhuvanagiri | Bichhiya | Bidar | Bihar Sharif 
+                | Bijapur | Bijnor | Bikaner | Bilara | Bilaspur | Bilaspur-CGH | Bilaspur-HP | Bilaspur-HR
+      </p>
+    </div>
+
+    <!-- Section 3 -->
+<div class="row pt-4 border-bottom border-light border-dotted">
+  <div class="col-md-6">
+    <h6 class="fw-bold">Popular Categories</h6>
+    <ul class="list-unstyled small">
+      <li><a href="/category/sunflower-oils/" class="text-white-50 text-decoration-none">Sunflower Oils</a></li>
+      <li><a href="/category/milk/" class="text-white-50 text-decoration-none">Milk</a></li>
+      <li><a href="/category/organic-fv/" class="text-white-50 text-decoration-none">Organic F&V</a></li>
+      <li><a href="/category/floor-cleaners/" class="text-white-50 text-decoration-none">Floor Cleaners</a></li>
+      <li><a href="/category/frozen-veg/" class="text-white-50 text-decoration-none">Frozen Veg Food</a></li>
+      <li><a href="/category/atta/" class="text-white-50 text-decoration-none">Wheat Atta</a></li>
+      <li><a href="/category/health-drinks/" class="text-white-50 text-decoration-none">Health Drinks</a></li>
+      <li><a href="/category/namkeen/" class="text-white-50 text-decoration-none">Namkeen</a></li>
+    </ul>
+  </div>
+
+  <div class="col-md-6">
+    <h6 class="fw-bold">Popular Brands</h6>
+    <ul class="list-unstyled small">
+      <li><a href="/brand/amul/" class="text-white-50 text-decoration-none">Amul</a></li>
+      <li><a href="/brand/red-bull/" class="text-white-50 text-decoration-none">Red Bull</a></li>
+      <li><a href="/brand/britannia/" class="text-white-50 text-decoration-none">Britannia</a></li>
+      <li><a href="/brand/haldirams/" class="text-white-50 text-decoration-none">Haldiram's</a></li>
+      <li><a href="/brand/mtr/" class="text-white-50 text-decoration-none">MTR</a></li>
+      <li><a href="/brand/yakult/" class="text-white-50 text-decoration-none">Yakult</a></li>
+      <li><a href="/brand/fortune/" class="text-white-50 text-decoration-none">Fortune</a></li>
+      <li><a href="/brand/lays/" class="text-white-50 text-decoration-none">Lay's</a></li>
+    </ul>
+  </div>
+</div>
+
+
+    <!-- Bottom -->
+    <div class="text-center py-3 small text-white-50">
+      © 2025 My Basket — Supermarket Grocery Supplies Pvt Ltd
+    </div>
+
+  </div>
+  </footer>
+
+  <!--=================Scripts====================-->
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{% static 'js/base.js' %}"></script>
+  {% block extra_js %}{% endblock %}
+
+</body>
+</html>

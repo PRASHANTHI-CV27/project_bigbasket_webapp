@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Enter OTP</h2>
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="phone" value="{{ request.GET.phone }}">
+
+    <div class="mb-3">
+      <label for="otp">OTP</label>
+      <input type="text" class="form-control" name="otp" required>
+    </div>
+    <button type="submit" class="btn btn-success">Verify OTP</button>
+  </form>
+</div>
+{% endblock %}

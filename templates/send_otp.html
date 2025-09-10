@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Login with OTP</h2>
+  <form method="post">
+    {% csrf_token %}
+    <div class="mb-3">
+      <label for="phone">Phone Number</label>
+      <input type="text" class="form-control" name="phone" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Send OTP</button>
+  </form>
+</div>
+{% endblock %}

@@ -4,6 +4,8 @@ from .models import Product,Category, Cart, CartItem, Product,CartOrder, CartOrd
 from django.shortcuts import get_object_or_404
 from .serializers import ProductSerializer, CategorySerializer,CartSerializer, CartItemSerializer, CartOrderSerializer
 from rest_framework import serializers
+from django.db import transaction
+from decimal import Decimal
 
 import uuid
 
@@ -138,62 +140,72 @@ def _get_cart_for_request(request):
         cart, _ = Cart.objects.get_or_create(session_id=sid)
     return cart
 
+import traceback
 class CheckoutView(APIView):
-    permission_classes = [permissions.IsAuthenticated]  # require login; change if you allow guest checkout
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
-        cart = _get_cart_for_request(request)
-        items = list(cart.items.select_related('product').all())
-        if not items:
-            return Response({"detail": "Cart is empty"}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            cart = _get_cart_for_request(request)
+            items = list(cart.items.select_related('product').all())
 
-        with transaction.atomic():
-            total_amount = 0
-            prepared = []
-            for ci in items:
-                product = ci.product
-                if not product:
-                    return Response({"detail": f"CartItem {ci.id} missing product"}, status=status.HTTP_400_BAD_REQUEST)
+            if not items:
+                return Response({"detail": "Cart is empty"}, status=status.HTTP_400_BAD_REQUEST)
 
-                price = getattr(product, 'price', ci.price_snapshot or 0)
-                qty = ci.quantity
-                line_total = price * qty
-                total_amount += line_total
-                prepared.append({
-                    'title': getattr(product, 'title', str(product)),
-                    'image': getattr(product, 'image', None),
-                    'qty': qty,
-                    'price': price,
-                    'line_total': line_total,
-                })
+            # compute totals and create order atomically
+            with transaction.atomic():
+                total_amount = Decimal("0.00")
 
-            invoice = uuid.uuid4().hex[:12].upper()
-            order = CartOrder.objects.create(
-                user=request.user,
-                invoice_no=invoice,
-                price=total_amount,
-                paid_status=False,
-                order_status='processing'
-            )
+                # validate items and sum price
+                for ci in items:
+                    # ensure product exists
+                    if not getattr(ci, "product", None):
+                        return Response({"detail": f"CartItem {ci.id} missing product"}, status=status.HTTP_400_BAD_REQUEST)
 
-            for p in prepared:
-                CartOrderItems.objects.create(
-                    order=order,
-                    item_status='processing',
-                    item=p['title'],
-                    image=p['image'] if p['image'] else None,
-                    qty=p['qty'],
-                    price=p['price'],
-                    total=p['line_total']
+                    product_price = Decimal(ci.product.price or ci.price_snapshot or 0)
+                    qty = Decimal(ci.quantity or 0)
+                    total_amount += product_price * qty
+
+                # create order
+                invoice = uuid.uuid4().hex[:12].upper()
+                order = CartOrder.objects.create(
+                    user=request.user,
+                    invoice_no=invoice,
+                    price=total_amount,
+                    paid_status=False,
+                    order_status='processing'
                 )
 
-            # clear cart
-            cart.items.all().delete()
+                # create order items (ensure model has 'product' field; if not, remove product=...)
+                for ci in items:
+                    product = ci.product
+                    CartOrderItems.objects.create(
+                        order=order,
+                        product=product,              # <-- only if CartOrderItems has product FK
+                        item_status='pending',        # use your choice/choices
+                        item=product.title if product else (ci.product.title if hasattr(ci, 'product') else str(ci)),
+                        image=(product.image if getattr(product, 'image', None) else None),
+                        qty=ci.quantity,
+                        price=product.price if product else (ci.price_snapshot or 0),
+                        total=Decimal(ci.quantity) * Decimal(product.price if product else (ci.price_snapshot or 0))
+                    )
 
-            serializer = CartOrderSerializer(order, context={'request': request})
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        
-        
+                # clear cart
+                cart.items.all().delete()
+
+                serializer = CartOrderSerializer(order, context={'request': request})
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            # print full traceback to server console (very helpful)
+            traceback.print_exc()
+            # return a safe message to client and the error string
+            return Response(
+                {"detail": "Internal server error during checkout",
+                 "error": str(e),
+                 "traceback": traceback.format_exc()},
+                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
         
         
         

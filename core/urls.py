@@ -19,7 +19,7 @@ urlpatterns = [
     
     
     path('api/', include(router.urls)), 
-    path('api/orders/checkout/', CheckoutView.as_view(), name='api-checkout'),
+    path('api/checkout/', CheckoutView.as_view(), name='api-checkout'),
 
     
 ]

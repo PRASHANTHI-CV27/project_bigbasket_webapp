@@ -1,100 +1,145 @@
+from rest_framework.views import APIView
+from django.core.mail import send_mail
+from django.conf import settings
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from rest_framework import status
+from .serializers import SignupSerializer,RequestOTPSerializer, PasswordLoginSerializer,LoginSerializer
+import random
+from django.contrib.auth import get_user_model
+from .models import OTP, User
 
-from django.shortcuts import render, redirect
-from django.contrib.auth import get_user_model, login,logout, authenticate
-from django.http import HttpResponse
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from .models import Profile
-
-
-
+from django.contrib.auth import authenticate, login
 
 User = get_user_model()
 
-def home(request):
-    print("DEBUG HOME request.user:", request.user, request.user.is_authenticated)
-    return render(request, "index.html")
+class SignupAPIView(APIView):
+    permission_classes = [AllowAny]
 
-def register(request):
-    if request.method == 'POST':
-        email = request.POST.get('email', '').strip()
-        name = request.POST.get('name', '').strip()
-        password = request.POST.get('password', '')
-
-        if not email or not password:
-            messages.error(request, "Email and password are required.")
-            return redirect("register")
-
-        if User.objects.filter(email=email).exists():
-            messages.error(request, "Email already registered")
-            return redirect("register")
-
-        # ✅ use keyword args
-        user = User.objects.create_user(username=name or email, email=email, password=password)
-        user.first_name = name
-        user.save()
-        
-        user = authenticate(request, username=email, password=password)
-        if user is not None:
-            login(request, user)
-            messages.success(request, f"Welcome {user.first_name or user.email}")
-            return redirect("home")
-        else:
-            # fallback: set backend and login (rare)
-            user.backend = "django.contrib.auth.backends.ModelBackend"
-            
-
-        login(request, user)   # auto login after signup
-        return redirect("home")
-
-    return render(request, 'register.html')
+    def post(self, request):
+        serializer = SignupSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"detail": "User created successfully"}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# users/views.py
+
+
+
+
+
+
+class RequestOTPAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = RequestOTPSerializer(data=request.data)
+        if serializer.is_valid():
+            email = serializer.validated_data['email']
+
+            # check if user exists
+            try:
+                user = User.objects.get(email=email)
+            except User.DoesNotExist:
+                return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+            # generate OTP
+            otp_code = f"{random.randint(100000, 999999)}"
+            OTP.objects.create(email=email, code=otp_code)
+
+            # send OTP (console backend)
+            send_mail(
+                "Your Login OTP",
+                f"Your OTP is {otp_code}. It will expire in 5 minutes.",
+                getattr(settings, "DEFAULT_FROM_EMAIL", "webmaster@localhost"),
+                [email],
+                fail_silently=False,
+            )
+
+            print("🔥 OTP SENT:", otp_code, "to", email)
+
+            return Response({"detail": "OTP generated successfully","otp": otp_code  }, status=status.HTTP_200_OK)
+
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    
+    
+    
+
+# --- Login with password (for everyone, required for admin) ---
+from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate, login
-from django.contrib import messages
-from django.shortcuts import redirect, render
 
-def login_page(request):
-    if request.method == "POST":
-        email = request.POST.get("email", "").strip()
-        password = request.POST.get("password", "")
-        user = authenticate(request, username=email, password=password)
-        print("DEBUG authenticate ->", user)        # temp debug
-        if user is not None:
-            login(request, user)
-            print("DEBUG after login request.user:", request.user, request.user.is_authenticated)
-            messages.success(request, "Logged in")
-            return redirect("home")   # must redirect (not render)
-        messages.error(request, "Invalid credentials")
-        return redirect("login_page")
-    return render(request, "login.html")
+def get_tokens_for_user(user):
+    refresh = RefreshToken.for_user(user)
+    return {
+        "refresh": str(refresh),
+        "access": str(refresh.access_token),
+    }
+
+# --- Login with password ---
+class PasswordLoginAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = PasswordLoginSerializer(data=request.data)
+        if serializer.is_valid():
+            email = serializer.validated_data['email']
+            password = serializer.validated_data['password']
+
+            user = authenticate(request, email=email, password=password)
+            if user is not None:
+                tokens = get_tokens_for_user(user)
+                role = "admin" if user.is_superuser else user.profile.role
+                return Response({
+                    "detail": "Login successful",
+                    "role": role,
+                    "tokens": tokens
+                }, status=status.HTTP_200_OK)
+
+            return Response({"detail": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-def logout_page(request):
-    logout(request)
-    return redirect('home')
+# --- Verify OTP (Login with OTP) ---
+class VerifyOTPAPIView(APIView):
+    permission_classes = [AllowAny]
 
+    def post(self, request):
+        serializer = LoginSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@login_required(login_url='login_page')
-def profile_page(request):
-    profile, created = Profile.objects.get_or_create(user=request.user)
-    if request.method == 'POST':
-        first_name = request.POST.get('first_name', '')
-        last_name = request.POST.get('last_name', '')
-        address = request.POST.get('address', '')
-        phone_number = request.POST.get('phone_number', '')
+        email = serializer.validated_data['email']
+        otp_code = serializer.validated_data['otp']
 
-        request.user.first_name = first_name
-        request.user.last_name = last_name
-        request.user.save()
-        
-        
+        otp = OTP.objects.filter(email=email, code=otp_code, is_used=False).order_by('-created_at').first()
+        if not otp:
+            return Response({"detail": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)
 
-        profile.address = request.POST.get('address', profile.address)
-        profile.phone = request.POST.get('phone_number', profile.phone)
-        profile.save()
+        if otp.is_expired(expiry_minutes=5):
+            return Response({"detail": "OTP expired"}, status=status.HTTP_400_BAD_REQUEST)
 
-        messages.success(request, "Profile updated successfully")
+        otp.is_used = True
+        otp.save()
 
-    return render(request, "profile.html", {"user_profile": profile})
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if not user.is_active:
+            return Response({"detail": "User inactive"}, status=status.HTTP_400_BAD_REQUEST)
+
+        tokens = get_tokens_for_user(user)
+        role = "admin" if user.is_superuser else user.profile.role
+
+        return Response({
+            "detail": "Login successful",
+            "role": role,
+            "tokens": tokens
+        }, status=status.HTTP_200_OK)
+

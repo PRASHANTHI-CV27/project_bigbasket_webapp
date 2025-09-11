@@ -87,6 +87,7 @@ class CartSerializer(serializers.ModelSerializer):
 
 
 class CartOrderItemSerializer(serializers.ModelSerializer):
+    product = ProductSerializer(read_only=True)
     """
     Serializer for each item inside an order.
     Uses the model fields you already have.
@@ -95,6 +96,7 @@ class CartOrderItemSerializer(serializers.ModelSerializer):
         model = CartOrderItems
         fields = [
             'id',
+            'product',
             'item_status',
             'item',
             'image',
@@ -111,7 +113,7 @@ class CartOrderSerializer(serializers.ModelSerializer):
     `source='cartorderitems_set'` uses Django's default related name
     since your CartOrderItems FK did not set a related_name.
     """
-    items = CartOrderItemSerializer(source='cartorderitems_set', many=True, read_only=True)
+    items = CartOrderItemSerializer(many=True, read_only=True)
 
     class Meta:
         model = CartOrder

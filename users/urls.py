@@ -1,13 +1,11 @@
+# users/urls.py
 from django.urls import path
-from . import views
+from .views import SignupAPIView, RequestOTPAPIView, VerifyOTPAPIView, PasswordLoginAPIView
 
 urlpatterns = [
-    path("", views.home, name="home"),
-    path('register/', views.register, name ='register'),
-    path('login/', views.login_page, name ='login_page'),
-    path('logout/', views.logout_page, name ='logout_page'),
-    path('profile/', views.profile_page, name ='profile_page')
-
+    path('signup/', SignupAPIView.as_view(), name='user-signup'),
+    path('request-otp/', RequestOTPAPIView.as_view(), name='user-request-otp'),
+    path('verify-otp/', VerifyOTPAPIView.as_view(), name='user-verify-otp'),
+    path('login/password/', PasswordLoginAPIView.as_view(), name='user-login-password'),
+   
 ]
-
-

@@ -191,7 +191,8 @@ class CartOrder(models.Model):
 
 class CartOrderItems(models.Model):
     order = models.ForeignKey("core.CartOrder", on_delete=models.CASCADE)
-    item_status = models.CharField(max_length=200, default="processing")  # was product_status
+    product = models.ForeignKey("core.Product", on_delete=models.SET_NULL, null=True, blank=True)
+    item_status = models.CharField(choices = ORDER_STATUS, max_length=200, default="processing")  # was product_status
     item = models.CharField(max_length=200)  # product title
     image = models.ImageField(upload_to='user_directory_path', max_length=200, blank=True, null=True)
     qty = models.IntegerField(default=0)

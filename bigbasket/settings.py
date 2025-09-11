@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-0d9vhn%8!fu538tdu85c2(=$g4$cl4fg^hscl3nkw1o2m9x9&i
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -42,18 +42,16 @@ INSTALLED_APPS = [
     'rest_framework',
     'users',
     'core',
-    
-    
-    
-    
+      
 ]
 
 
 REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',
-    ]
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
 }
+
 
 
 MIDDLEWARE = [
@@ -96,6 +94,13 @@ DATABASES = {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
+}
+
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),   # tokens valid for 1 hour
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),   # refresh token valid for 1 day
 }
 
 
@@ -145,10 +150,10 @@ STATICFILES_DIRS = [
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-AUTH_USER_MODEL = "users.User"
+
 
 MEDIA_URL = '/media/'
-BASE_DIR = Path(__file__).resolve().parent.parent
+
 
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
@@ -161,3 +166,17 @@ JAZZMIN_SETTINGS = {
     
     
 }
+
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+DEFAULT_FROM_EMAIL = "webmaster@localhost"
+
+
+
+USERNAME_FIELD = "email"
+
+AUTHENTICATION_BACKENDS = [
+    "users.backends.EmailBackend",   # custom email backend
+    "django.contrib.auth.backends.ModelBackend",  # default
+]
+
+AUTH_USER_MODEL = "users.User"

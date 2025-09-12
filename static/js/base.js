@@ -15,3 +15,9 @@ document.addEventListener('DOMContentLoaded', () => {
       categoryList.innerHTML = '<li><span class="dropdown-item text-muted">No categories</span></li>';
     });
 });
+
+// Function to open auth modal
+function openAuthModel() {
+  const modal = new bootstrap.Modal(document.getElementById('authModal'));
+  modal.show();
+}

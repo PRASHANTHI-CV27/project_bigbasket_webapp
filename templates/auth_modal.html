@@ -1,0 +1,94 @@
+{% load static %}
+
+<div class="modal fade" id="authModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-md">
+    <div class="modal-content">
+      <div class="row g-0">
+        
+        <!-- Left Side -->
+        <div class="col-md-5 auth-left p-3 text-center">
+          <h5 class="auth-heading mb-3">Why choose My Basket?</h5>
+
+          <div class="row g-3">
+            <div class="col-6">
+              <div class="feature-circle"><i class="bi bi-stars"></i></div>
+              <p class="feature-text">Quality</p>
+            </div>
+            <div class="col-6">
+              <div class="feature-circle"><i class="bi bi-alarm"></i></div>
+              <p class="feature-text">On Time</p>
+            </div>
+            <div class="col-6">
+              <div class="feature-circle"><i class="bi bi-arrow-repeat"></i></div>
+              <p class="feature-text">Return Policy</p>
+            </div>
+            <div class="col-6">
+              <div class="feature-circle"><i class="bi bi-truck"></i></div>
+              <p class="feature-text">Free Delivery</p>
+            </div>
+          </div>
+
+          <hr class="divider my-3">
+
+          <p class="find-us">Find us on</p>
+          <div class="social-links">
+            <a href="#"><i class="bi bi-google-play"></i></a>
+            <a href="#"><i class="bi bi-apple"></i></a>
+          </div>
+        </div>
+
+        <!-- Right Side -->
+        <div class="col-md-7 auth-right p-3">
+          <div class="d-flex mb-3 auth-toggle">
+            <a href="#" id="showLogin" class="me-3 active">Login</a>
+            <a href="#" id="showSignup">Sign Up</a>
+          </div>
+
+          <!-- Login Form -->
+          <div id="loginBox">
+            <form id="loginForm">
+              <input type="email" class="form-control mb-2" id="loginEmail" placeholder="Enter Email" required>
+              <div class="input-group mb-2">
+                <input type="text" class="form-control" id="loginCredential" placeholder="Enter Password or OTP" required>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="requestOtpBtn">Get OTP</button>
+              </div>
+              <button type="submit" class="btn btn-danger w-100 btn-sm">Continue</button>
+              <p class="terms mt-2">
+                By continuing, I accept TCP – 
+                <a href="#">Terms and Conditions</a> & 
+                <a href="#">Privacy Policy</a>.<br>
+                This site is protected by reCAPTCHA and the Google 
+                <a href="#">Privacy Policy</a> and 
+                <a href="#">Terms of Service</a> apply.
+              </p>
+            </form>
+          </div>
+
+          <!-- Signup Form -->
+          <div id="signupBox" class="d-none">
+            <form id="signupForm">
+              <input type="text" class="form-control mb-2" id="signupName" placeholder="Enter Username" required>
+              <input type="email" class="form-control mb-2" id="signupEmail" placeholder="Enter Email" required>
+              <input type="password" class="form-control mb-2" id="signupPassword" placeholder="Enter Password" required>
+              <select class="form-control mb-2" id="signupRole" required>
+                <option value="" disabled selected>Select Role</option>
+                <option value="customer">Customer</option>
+                <option value="vendor">Vendor</option>
+              </select>
+              <button type="submit" class="btn btn-danger w-100 btn-sm">Continue</button>
+              <p class="terms mt-2">
+                By continuing, I accept TCP – 
+                <a href="#">Terms and Conditions</a> & 
+                <a href="#">Privacy Policy</a>.<br>
+                This site is protected by reCAPTCHA and the Google 
+                <a href="#">Privacy Policy</a> and 
+                <a href="#">Terms of Service</a> apply.
+              </p>
+            </form>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>

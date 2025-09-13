@@ -13,14 +13,16 @@ class SignupSerializer(serializers.ModelSerializer):
         role = validated_data.pop('role')
         password = validated_data.pop('password')
 
-        # ✅ Use create_user to ensure password is hashed
+        # Create the user
         user = User.objects.create_user(password=password, **validated_data)
 
-        # Assign role to profile
-        user.profile.role = role
-        user.profile.save()
+        # ✅ Update the existing profile created by signals
+        if hasattr(user, "profile"):
+            user.profile.role = role
+            user.profile.save()
 
         return user
+
 
 
 
@@ -37,3 +39,14 @@ class LoginSerializer(serializers.Serializer):
 class PasswordLoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
+
+
+class UserSerializer(serializers.ModelSerializer):
+    role = serializers.CharField(source='profile.role', read_only=True)
+    address = serializers.CharField(source='profile.address', read_only=True)
+    phone = serializers.CharField(source='profile.phone', read_only=True)
+
+    class Meta:
+        model = User
+        fields = ['id', 'email', 'username', 'is_active', 'is_staff', 'is_superuser', 'date_joined', 'role', 'address', 'phone']
+        read_only_fields = ['id', 'date_joined']

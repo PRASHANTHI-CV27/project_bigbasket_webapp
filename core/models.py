@@ -5,6 +5,8 @@ from django.utils.html import mark_safe
 from unicodedata import decimal
 from users.models import User
 from decimal import Decimal
+import uuid
+
 
 PRODUCT_STATUS = (
     ('active', 'Active'),

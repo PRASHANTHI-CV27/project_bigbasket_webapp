@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Product,Category ,ProductImages, CartOrder, CartOrderItems, Cart, CartItem, CartOrder, CartOrderItems
+from .models import Product,Category ,ProductImages, CartOrder, CartOrderItems, Cart, CartItem, CartOrder, CartOrderItems, Vendor
 
 # Serializer for extra product images
 class ProductImageSerializer(serializers.ModelSerializer):
@@ -128,3 +128,28 @@ class CartOrderSerializer(serializers.ModelSerializer):
             'items',
         ]
         read_only_fields = ('price', 'paid_status', 'order_date', 'invoice_no')
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context.get('request')
+        if request and request.user and request.user.is_authenticated:
+            if not (request.user.is_staff or request.user.is_superuser):
+                # For non-admins (customers/vendors), hide user field
+                data.pop('user', None)
+        return data
+        
+        
+
+
+class VendorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Vendor
+        fields = "__all__"
+         # vendor.user will be set automatically
+
+
+class CartOrderItemUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CartOrderItems
+        fields = ['id', 'item_status']
+

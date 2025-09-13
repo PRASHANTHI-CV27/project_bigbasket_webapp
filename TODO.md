@@ -1,0 +1,3 @@
+- [x] Modify users/views.py RequestOTPAPIView to include OTP in JSON response
+- [x] Update static/js/auth.js to display the received OTP on the screen
+- [ ] Test the OTP request flow to ensure OTP is displayed

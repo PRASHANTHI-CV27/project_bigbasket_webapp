@@ -1,4 +1,20 @@
 document.addEventListener("DOMContentLoaded", () => {
+  // Utility function to get CSRF token from cookie
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
   // Utility function to show temporary messages
   function showTemporaryMessage(message, duration = 3000) {
     let messageDiv = document.createElement("div");
@@ -10,7 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
     messageDiv.style.color = "white";
     messageDiv.style.padding = "10px 20px";
     messageDiv.style.borderRadius = "5px";
-    messageDiv.style.zIndex = "1050";
+    messageDiv.style.zIndex = "1060";
     messageDiv.style.boxShadow = "0 2px 6px rgba(0,0,0,0.3)";
     document.body.appendChild(messageDiv);
 
@@ -32,7 +48,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let res = await fetch("/api/users/signup/", {
       method: "POST",
-      headers: {"Content-Type": "application/json"},
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCookie("csrftoken"),
+      },
+      credentials: "same-origin",
       body: JSON.stringify(data)
     });
 
@@ -61,7 +81,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let res = await fetch("/api/users/request-otp/", {
       method: "POST",
-      headers: {"Content-Type": "application/json"},
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCookie("csrftoken"),
+      },
+      credentials: "same-origin",
       body: JSON.stringify({email})
     });
 
@@ -74,7 +98,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (res.ok) {
-      showTemporaryMessage("OTP sent: " + result.otp, 5000);
+      showTemporaryMessage("OTP sent successfully. Check your email.", 5000);
+      // OTP is no longer returned in response for security
+      if (result.otp) {
+        showTemporaryMessage("Your OTP is: " + result.otp, 7000);
+      }
     } else {
       showTemporaryMessage("Failed to request OTP: " + (result.detail || JSON.stringify(result)), 4000);
     }
@@ -87,16 +115,16 @@ document.addEventListener("DOMContentLoaded", () => {
      const email = document.getElementById("loginEmail").value;
      const credential = document.getElementById("loginCredential").value;
 
-     const data = { email };
-     if (credential) {
-     data.password = credential;
-     data.otp = credential;
-     }
+     const data = { email, otp: credential };
 
 
     let res = await fetch("/api/users/login/", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCookie("csrftoken"),
+      },
+      credentials: "same-origin",
       body: JSON.stringify(data),
     });
 

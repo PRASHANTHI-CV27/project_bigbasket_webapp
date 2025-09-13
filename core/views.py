@@ -1,14 +1,37 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth import logout
 from .serializers import CartSerializer
-from .models import Cart, Product
-from django.shortcuts import render, get_object_or_404
+from .models import Cart, Product, Vendor
 
 
 
 def home(request):
+    # Redirect users to their respective dashboards based on role
+    if request.user.is_authenticated:
+        role = None
+        if request.user.is_staff or request.user.is_superuser:
+            role = "admin"
+        else:
+            role = getattr(request.user.profile, "role", None)
+
+        if role == "admin":
+            return redirect("/superadmin/")
+        elif role == "vendor":
+            return redirect("/vendors/")
+        elif role == "customer":
+            return render(request, "index.html")
+        else:
+            # Unknown role, logout for safety
+            logout(request)
+            return redirect("/login/")
+
     return render(request, "index.html")
 
 def cart_view(request):
+    # Only allow customers to view cart
+    if not request.user.is_authenticated or getattr(request.user.profile, "role", None) != "customer":
+        return redirect("/login/")
+
     cart = None
     savings = 0
     total = 0

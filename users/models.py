@@ -30,12 +30,13 @@ class Profile(models.Model):
         return f"Profile of {self.user.email}"
 
     #signal to create  profile when user is created
-    @receiver(post_save, sender=User)
-    def create_or_update_user_profile(sender, instance, created, **kwargs):
-        if created:
-            Profile.objects.create(user=instance)
-        else:
-            instance.profile.save()
+    # Removed duplicate signal to avoid IntegrityError on profile creation
+    # @receiver(post_save, sender=User)
+    # def create_or_update_user_profile(sender, instance, created, **kwargs):
+    #     if created:
+    #         Profile.objects.create(user=instance)
+    #     else:
+    #         instance.profile.save()
 
 class OTP(models.Model):
     email = models.EmailField()

@@ -19,6 +19,20 @@ def cart_context(request):
             else:
                 cart, _ = Cart.objects.get_or_create(session_id=request.session.session_key)
 
+            # If user is authenticated and cart is session-based, merge to user cart
+            if request.user.is_authenticated and cart.session_id and not cart.user:
+                user_cart, _ = Cart.objects.get_or_create(user=request.user)
+                for item in cart.items.all():
+                    existing = user_cart.items.filter(product=item.product).first()
+                    if existing:
+                        existing.quantity += item.quantity
+                        existing.save()
+                    else:
+                        item.cart = user_cart
+                        item.save()
+                cart.delete()
+                cart = user_cart
+
             cart_data = CartSerializer(cart).data
             cart_count = len(cart_data["items"])
             cart_total = cart_data["total"]

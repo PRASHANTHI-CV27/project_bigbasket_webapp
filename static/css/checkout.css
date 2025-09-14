@@ -1,197 +1,154 @@
-/* Green Header */
+/* === GENERAL === */
+body {
+  font-family: "Segoe UI", Arial, sans-serif;
+  background-color: #f8f9fa;
+}
+
+/* === HEADER === */
 .checkout-header {
-  background: #3b6e22;
-  padding: 15px;
+  background-color: #198754; /* Bootstrap success green */
   color: white;
 }
 
-.header-content {
-  display: flex;
-  align-items: center;
-  justify-content: center; /* Center everything */
-  gap: 20px;
+.checkout-header img {
+  height: 45px;
 }
 
-.checkout-container {
-  display: flex;
-  justify-content: center;
+.checkout-header .fw-bold {
+  font-size: 14px;
+}
+
+.checkout-header .container {
   gap: 30px;
-  margin: 20px auto;
-  max-width: 1200px;
-}
-.logo {
-  width: 50px;
-  height: auto;
 }
 
-.address-section {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.change-btn {
-  background: transparent;
-  border: 1px solid white;
-  color: white;
-  padding: 4px 10px;
-  cursor: pointer;
-  border-radius: 4px;
-}
-
-.payment-info {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  text-align: left;
-}
-
-.payment-info .title {
-  font-weight: bold;
-}
-
-.payment-info .subtext {
-  font-size: 13px;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/* ✅ Main Layout */
-.checkout-container {
-  display: flex;
-  justify-content: center;
-  gap: 30px;
-  margin: 30px auto;
-  width: 70%; /* leaves margin left & right */
-}
-
-.left-section, .right-section {
-  background: #fff;
-  padding: 20px;
-  border-radius: 6px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  flex: 1;
-}
-
-.card-form input {
-  width: 100%;
-  padding: 8px;
-  margin-bottom: 10px;
-}
-
-.card-form .row {
-  display: flex;
-  gap: 10px;
-}
-
-.card-form .row input {
-  flex: 1;
-}
-
-/* ✅ Right Side */
-.order-summary p {
-  display: flex;
-  justify-content: space-between;
-  margin: 5px 0;
-}
-
-.order-summary .savings {
-  color: green;
-}
-
-.order-summary .total {
-  font-size: 16px;
-  font-weight: bold;
-}
-
-.pay-btn {
-  width: 100%;
-  padding: 10px;
-  background: #4a7c12;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 15px;
-  cursor: pointer;
-}
-
-.payment-methods {
-  display: flex;
-  gap: 20px;
-}
-
+/* === PAYMENT METHODS (LEFT SECTION) === */
 .methods-list {
-  width: 200px;
-  border-right: 1px solid #ddd;
-}
-
-.methods-list ul {
-  list-style: none;
   padding: 0;
   margin: 0;
 }
 
 .methods-list li {
-  padding: 12px;
   cursor: pointer;
-  border-left: 4px solid transparent;
+  padding: 12px 16px;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  transition: all 0.2s ease-in-out;
+}
+
+.methods-list li i {
+  font-size: 18px;
+}
+
+.methods-list li:hover {
+  background-color: #f1fdf5;
 }
 
 .methods-list li.active {
-  background: #f9f9f9;
-  border-left: 4px solid #4a7c12;
-  font-weight: bold;
+  background-color: #e9f9ee;
+  border-left: 4px solid #28a745;
+  font-weight: 600;
 }
 
-.method-details {
-  flex: 1;
-  padding: 15px;
+/* === BUTTONS === */
+button {
+  transition: 0.3s;
 }
 
+button:hover {
+  opacity: 0.9;
+}
+
+/* === METHOD CONTENT === */
 .method-content {
-  display: none;
+  margin-top: 20px;
 }
 
-.method-content.active {
-  display: block;
+#cod-form button,
+#razorpay-form button,
+#card-form button {
+  font-size: 16px;
+  padding: 10px;
 }
 
-
-.modal.hidden {
-  display: none;
+/* === CARD FORM === */
+#card-form input {
+  font-size: 14px;
+  padding: 8px;
 }
 
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+#card-form .d-flex input {
+  flex: 1;
 }
 
+/* === ORDER SUMMARY (RIGHT SECTION) === */
+.right-section .card-body {
+  font-size: 15px;
+}
+
+.right-section h5 {
+  font-size: 16px;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+#order-items p {
+  margin-bottom: 6px;
+}
+
+#subtotal,
+#delivery,
+#savings,
+#total {
+  font-weight: 600;
+}
+
+.text-success {
+  font-size: 14px;
+}
+
+/* === COUPON === */
+.form-check-label {
+  font-size: 14px;
+}
+
+#apply-coupon {
+  cursor: pointer;
+}
+
+/* === MODAL === */
 .modal-content {
-  background: white;
-  padding: 20px;
-  border-radius: 6px;
-  min-width: 300px;
+  border-radius: 8px;
+}
+
+.modal-content h5 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.modal-content input {
+  font-size: 14px;
+  padding: 8px;
+}
+
+.modal-content .btn {
+  padding: 6px 14px;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+  .checkout-header .container {
+    flex-direction: column;
+    text-align: center;
+    gap: 15px;
+  }
+
+  .methods-list li {
+    font-size: 14px;
+  }
 }

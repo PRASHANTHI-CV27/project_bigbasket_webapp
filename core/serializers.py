@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Product,Category ,ProductImages, CartOrder, CartOrderItems, Cart, CartItem, CartOrder, CartOrderItems, Vendor, Address
+from .models import Product,Category ,ProductImages, CartOrder, CartOrderItems, Cart, CartItem, CartOrder, CartOrderItems, Vendor, Address, Payment
 
 # Serializer for extra product images
 class ProductImageSerializer(serializers.ModelSerializer):
@@ -164,3 +164,14 @@ class AddressSerializer(serializers.ModelSerializer):
         # expose id, address text and status (status = default)
         fields = ["id", "address", "status"]
         read_only_fields = ["id"]
+
+
+
+class PaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Payment
+        fields = [
+            "id", "order", "user", "method", "amount", "status",
+            "razorpay_order_id", "razorpay_payment_id", "razorpay_signature", "created_at"
+        ]
+        read_only_fields = ["status", "razorpay_order_id", "razorpay_payment_id", "razorpay_signature", "created_at"]

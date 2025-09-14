@@ -3,7 +3,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from . import views
 
-from .api import ProductViewSet, CategoryViewSet, CartViewSet, CheckoutView, OrderViewSet, VendorViewSet, UserViewSet, AddressViewSet
+from .api import ProductViewSet, CategoryViewSet, CartViewSet, CheckoutView, OrderViewSet, VendorViewSet, UserViewSet, AddressViewSet,CreateRazorpayOrderView, VerifyRazorpayPaymentView
 
 router = DefaultRouter()
 router.register(r'products', ProductViewSet, basename='product')
@@ -26,4 +26,7 @@ urlpatterns = [
     # API endpoints
     path('api/', include(router.urls)),
     path('api/checkout/', CheckoutView.as_view(), name='api-checkout'),
+    
+    path("api/payment/create/", CreateRazorpayOrderView.as_view(), name="create-payment"),
+    path("api/payment/verify/", VerifyRazorpayPaymentView.as_view(), name="verify-payment"),
 ]

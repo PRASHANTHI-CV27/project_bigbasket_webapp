@@ -194,3 +194,8 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 AUTH_USER_MODEL = "users.User"
+
+
+# Razorpay settings
+RAZORPAY_KEY_ID = "test_key"
+RAZORPAY_KEY_SECRET = "test_secret"

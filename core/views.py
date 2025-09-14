@@ -75,6 +75,8 @@ def product_detail(request, pk):
 
 
 
+from django.contrib.auth.decorators import login_required
+
 @login_required
 def checkout_page(request):
     return render(request, "checkout.html")

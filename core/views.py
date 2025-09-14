@@ -2,6 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth import logout
 from .serializers import CartSerializer
 from .models import Cart, Product, Vendor
+from django.contrib.auth.decorators import login_required
 
 
 
@@ -70,3 +71,10 @@ def product_detail(request, pk):
         "discount": discount,
     })
 
+
+
+
+
+@login_required
+def checkout_page(request):
+    return render(request, "checkout.html")

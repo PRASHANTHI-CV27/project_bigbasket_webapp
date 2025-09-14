@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Product,Category ,ProductImages, CartOrder, CartOrderItems, Cart, CartItem, CartOrder, CartOrderItems, Vendor
+from .models import Product,Category ,ProductImages, CartOrder, CartOrderItems, Cart, CartItem, CartOrder, CartOrderItems, Vendor, Address
 
 # Serializer for extra product images
 class ProductImageSerializer(serializers.ModelSerializer):
@@ -153,3 +153,14 @@ class CartOrderItemUpdateSerializer(serializers.ModelSerializer):
         model = CartOrderItems
         fields = ['id', 'item_status']
 
+
+
+
+
+
+class AddressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Address
+        # expose id, address text and status (status = default)
+        fields = ["id", "address", "status"]
+        read_only_fields = ["id"]

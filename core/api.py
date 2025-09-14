@@ -9,10 +9,10 @@ import uuid
 import traceback
 from rest_framework.decorators import action
 
-from .models import Product, Category, Cart, CartItem, CartOrder, CartOrderItems, Vendor
+from .models import Product, Category, Cart, CartItem, CartOrder, CartOrderItems, Vendor, Address
 from .serializers import (
     ProductSerializer, CategorySerializer,
-    CartSerializer, CartItemSerializer, CartOrderSerializer, VendorSerializer, CartOrderItemUpdateSerializer
+    CartSerializer, CartItemSerializer, CartOrderSerializer, VendorSerializer, CartOrderItemUpdateSerializer, AddressSerializer
 
 )
 from users.serializers import UserSerializer
@@ -293,3 +293,40 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all().order_by('-date_joined')
     serializer_class = UserSerializer
     permission_classes = [IsAdminUserCustom]  # ✅ only admin
+
+
+
+class AddressViewSet(viewsets.ModelViewSet):
+    serializer_class = AddressSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        # Only addresses for the logged-in user
+        return Address.objects.filter(user=self.request.user).order_by("-status", "-id")
+
+    def perform_create(self, serializer):
+        # If user has no default, make this the default
+        is_first = not Address.objects.filter(user=self.request.user, status=True).exists()
+        addr = serializer.save(user=self.request.user, status=is_first or serializer.validated_data.get("status", False))
+        # If this address is default, unset status for others
+        if addr.status:
+            Address.objects.filter(user=self.request.user).exclude(pk=addr.pk).update(status=False)
+
+    def partial_update(self, request, *args, **kwargs):
+        # Keep normal partial_update behaviour, but if status=True set it as default and unset others
+        instance = self.get_object()
+        status_val = request.data.get("status", None)
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        if status_val in [True, "true", "True", "1", 1]:
+            Address.objects.filter(user=self.request.user).exclude(pk=instance.pk).update(status=False)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=["post"])
+    def set_default(self, request, pk=None):
+        addr = self.get_object()
+        Address.objects.filter(user=request.user).update(status=False)
+        addr.status = True
+        addr.save()
+        return Response(self.get_serializer(addr).data, status=status.HTTP_200_OK)

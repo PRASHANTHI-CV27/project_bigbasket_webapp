@@ -80,3 +80,9 @@ from django.contrib.auth.decorators import login_required
 @login_required
 def checkout_page(request):
     return render(request, "checkout.html")
+
+
+from django.shortcuts import render
+
+def orders_page(request):
+    return render(request, "orders.html")

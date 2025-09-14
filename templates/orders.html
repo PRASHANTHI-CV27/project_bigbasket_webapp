@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}My Orders{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+  <div class="row">
+    
+    <!-- Sidebar -->
+    <aside class="col-md-3">
+      <div class="list-group shadow-sm">
+        <h6 class="list-group-item fw-bold">Personal Details</h6>
+        <a href="#" class="list-group-item list-group-item-action">Edit Profile</a>
+        <a href="#" class="list-group-item list-group-item-action">Delivery Addresses</a>
+        <a href="#" class="list-group-item list-group-item-action">Email Addresses</a>
+
+        <h6 class="list-group-item fw-bold mt-3">Shop From</h6>
+        <a href="#" class="list-group-item list-group-item-action">Smart Basket</a>
+        <a href="#" class="list-group-item list-group-item-action">Past Orders</a>
+
+        <h6 class="list-group-item fw-bold mt-3">My Account</h6>
+        <a href="{% url 'orders' %}" class="list-group-item list-group-item-action active">My Orders</a>
+        <a href="#" class="list-group-item list-group-item-action">Customer Service</a>
+        <a href="#" class="list-group-item list-group-item-action">My Wallet</a>
+        <a href="#" class="list-group-item list-group-item-action">My Gift Cards</a>
+      </div>
+    </aside>
+
+    <!-- Orders Section -->
+    <section class="col-md-9">
+      <h3 class="mb-4">My Orders</h3>
+      <div id="orders-list" class="row g-3">
+        <!-- ✅ JS will render orders here -->
+      </div>
+    </section>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/orders.js' %}"></script>
+{% endblock %}

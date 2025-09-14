@@ -234,20 +234,13 @@ class CheckoutView(APIView):
 
 class OrderViewSet(viewsets.ModelViewSet):
     serializer_class = CartOrderSerializer
+    queryset = CartOrder.objects.all().order_by('-order_date')
 
     def get_permissions(self):
         if self.action in ['update', 'partial_update', 'destroy']:
-            return [permissions.IsAuthenticated, IsOrderOwnerOrAdmin()]
-        return [permissions.IsAuthenticated, IsOrderViewer()]
+            return [permissions.IsAuthenticated(), IsOrderOwnerOrAdmin()]
+        return [permissions.IsAuthenticated(), IsOrderViewer()]
 
-    def get_queryset(self):
-        qs = CartOrder.objects.all().order_by('-order_date')
-        user = self.request.user
-        if user.is_staff or user.is_superuser:
-            return qs
-        return qs.filter(user=user)
-
-    # ✅ Vendor/Admin can update per item status
     @action(detail=True, methods=['patch'], permission_classes=[IsVendorOrAdmin])
     def update_item_status(self, request, pk=None):
         order = self.get_object()

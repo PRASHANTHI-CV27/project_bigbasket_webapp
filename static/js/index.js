@@ -1,15 +1,230 @@
-// ------------------- CONFIG -------------------
-const PRODUCTS_URL = "/api/products/";
-const ADD_TO_CART_URL = "/api/cart/add/";
+console.log("✅ index.js loaded!");
+fetch("/api/products/").then(r => r.json()).then(d => console.log(d));
 
-// small helper to read Django CSRF cookie
+
+document.addEventListener("DOMContentLoaded", async () => {
+  const PRODUCTS_URL = "/api/products/";
+  const CATEGORIES_URL = "/api/categories/";
+  const productsRow = document.getElementById("products-row");
+  const viewport = document.querySelector(".products-viewport");
+  const prevBtn = document.getElementById("prevBtn");
+  const nextBtn = document.getElementById("nextBtn");
+
+  // --- 1. Fetch categories ---
+  const categoryRes = await fetch(CATEGORIES_URL);
+  const categories = await categoryRes.json();
+  const categoryMap = {};
+  categories.forEach(c => {
+    categoryMap[c.id] = (c.name ? c.name.toLowerCase() : "others");
+  });
+
+  // --- 2. Fetch products ---
+  const productRes = await fetch(PRODUCTS_URL);
+  let products = await productRes.json();
+
+  console.log("Products received:", products.length);
+
+  productsRow.innerHTML = "";
+
+  // --- 3. Loop products and build cards ---
+  products.forEach(product => {
+    const cname = categoryMap[product.category] || "others";
+
+    // category → unit options
+    const categoryRules = {
+      vegetables: ["250 g", "500 g", "1 kg"],
+      fruits: ["250 g", "500 g", "1 kg"],
+      cereals: ["500 g", "1 kg", "5 kg"],
+      bakery: ["1 packet"],
+      dairy: ["1 packet"],
+      snacks: ["1 packet"],
+      others: ["1 pc"]
+    };
+
+    const units = categoryRules[cname] || categoryRules["others"];
+
+    const basePrice = parseFloat(product.price);
+    const baseOld = parseFloat(product.old_price);
+
+    // first option prices
+    const mult = weightToMultiplier(units[0]);
+    const firstPrice = (basePrice * mult).toFixed(2);
+    const firstOld = baseOld ? (baseOld * mult).toFixed(2) : null;
+
+    const discount = firstOld && firstOld > firstPrice
+      ? Math.round(((firstOld - firstPrice) / firstOld) * 100)
+      : 0;
+
+    // --- 3a. Create card container ---
+    const card = document.createElement("div");
+    card.className = "product-card";
+
+    // --- 3b. Card HTML ---
+    card.innerHTML = `
+      <div class="img-wrap clickable">
+        ${discount ? `<div class="discount-badge">${discount}% OFF</div>` : ""}
+        <img src="${getImageUrl(product)}" alt="${product.title}">
+        <div class="delivery-badge">5 MINS</div>
+      </div>
+
+      <p class="text-muted small mb-1">${product.brand || "fresho!"}</p>
+      <h6 class="clickable">${product.title}</h6>
+
+      ${units.length > 1
+        ? `<select class="form-select form-select-sm variant-select mb-2">
+            ${units.map(u => {
+              const m = weightToMultiplier(u);
+              const price = (basePrice * m).toFixed(2);
+              const old = baseOld ? (baseOld * m).toFixed(2) : "";
+              return `<option data-price="${price}" data-old="${old}">${u}</option>`;
+            }).join("")}
+          </select>`
+        : `<div class="small text-muted mb-2">${units[0]}</div>`
+      }
+
+      <div class="price-row">
+        <span class="price-current">₹${firstPrice}</span>
+        ${firstOld ? `<span class="price-old">₹${firstOld}</span>` : ""}
+      </div>
+
+      <div class="offer-strip">Har Din Sasta!</div>
+
+      <div class="bottom-row ">
+      <button class="wishlist-btn" data-id="${product.id}">
+        <i class="bi bi-bookmark"></i>
+      </button>
+      <button class="add-to-cart-btn" data-id="${product.id}">
+        Add
+      </button>
+      </div>
+
+    `;
+
+    // --- 3c. Append to row ---
+    productsRow.appendChild(card);
+
+    // --- 3d. Dropdown change event ---
+    const select = card.querySelector(".variant-select");
+    if (select) {
+      const priceRow = card.querySelector(".price-row");
+      select.addEventListener("change", e => {
+        const opt = e.target.selectedOptions[0];
+        const newPrice = parseFloat(opt.dataset.price).toFixed(2);
+        const newOld = opt.dataset.old ? parseFloat(opt.dataset.old).toFixed(2) : null;
+
+        priceRow.innerHTML = `
+          <span class="price-current">₹${newPrice}</span>
+          ${newOld ? `<span class="price-old">₹${newOld}</span>` : ""}
+        `;
+      });
+    }
+
+    const addBtn = card.querySelector(".add-to-cart-btn");
+addBtn.addEventListener("click", async () => {
+  const csrftoken = getCookie("csrftoken");
+  const productId = addBtn.dataset.id;
+
+  let res = await fetch("/api/cart/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": csrftoken,
+      "Authorization": `Bearer ${localStorage.getItem("token") || ""}`
+    },
+    body: JSON.stringify({ product: productId, quantity: 1 })
+  });
+
+  if (res.ok) {
+    addBtn.textContent = "Added ✓";
+    addBtn.disabled = true;
+
+    if (typeof updateCartCount === "function") {
+      updateCartCount();
+    }
+  } else {
+    console.error("Add failed", await res.json());
+  }
+});
+
+// --- 3f. Wishlist button ---
+  const wishBtn = card.querySelector(".wishlist-btn");
+  if (wishBtn){
+  wishBtn.addEventListener("click", () => {
+  let savedItems = JSON.parse(localStorage.getItem("savedItems") || "[]");
+  const productData = {
+    id: product.id,
+    title: product.title,
+    image: getImageUrl(product),
+    price: product.price
+  };
+
+  if (!savedItems.find(p => p.id === product.id)) {
+    savedItems.push(productData);
+    localStorage.setItem("savedItems", JSON.stringify(savedItems));
+    wishBtn.innerHTML = "<i class='bi bi-bookmark-fill'></i>";
+  } else {
+      savedItems = savedItems.filter(p => p.id !== product.id);
+      localStorage.setItem("savedItems", JSON.stringify(savedItems));
+      wishBtn.innerHTML = `<i class="bi bi-bookmark"></i>`; // Reset
+  }
+});
+  }  
+
+    // --- 3e. Make image & title clickable ---
+    const img = card.querySelector("img");
+    const title = card.querySelector("h6");
+
+    [img, title].forEach(el => {
+      if (el) {
+        el.style.cursor = "pointer";
+        el.addEventListener("click", () => {
+          console.log("➡ Redirecting to:", `/product/${product.id}/`);
+          window.location.href = `/product/${product.id}/`;
+        });
+      }
+    });
+  });
+
+  // --- Helpers ---
+  function getImageUrl(product) {
+    if (product.image) return product.image;
+    return "https://via.placeholder.com/220x220?text=No+Image";
+  }
+
+  function weightToMultiplier(label) {
+    if (!label) return 1;
+    label = label.toLowerCase();
+    if (label.includes("kg")) return parseFloat(label) || 1;
+    if (label.includes("g")) return (parseFloat(label) || 0) / 1000;
+    return 1; // for "pc", "packet"
+  }
+
+  // --- 4. Arrows for carousel ---
+  function stepAmount() {
+    const card = productsRow.querySelector(".product-card");
+    if (!card) return viewport.clientWidth;
+    const style = getComputedStyle(card);
+    const gap = parseFloat(style.marginRight) || 16;
+    const per = Math.max(1, Math.floor(viewport.clientWidth / (card.offsetWidth + gap)));
+    return (card.offsetWidth + gap) * per;
+  }
+
+  prevBtn.addEventListener("click", () => {
+    viewport.scrollBy({ left: -stepAmount(), behavior: "smooth" });
+  });
+  nextBtn.addEventListener("click", () => {
+    viewport.scrollBy({ left: stepAmount(), behavior: "smooth" });
+  });
+});
+
+
 function getCookie(name) {
   let cookieValue = null;
   if (document.cookie && document.cookie !== "") {
     const cookies = document.cookie.split(";");
     for (let i = 0; i < cookies.length; i++) {
       const cookie = cookies[i].trim();
-      if (cookie.substring(0, name.length + 1) === name + "=") {
+      if (cookie.substring(0, name.length + 1) === (name + "=")) {
         cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
         break;
       }
@@ -17,213 +232,3 @@ function getCookie(name) {
   }
   return cookieValue;
 }
-const csrftoken = getCookie("csrftoken");
-
-// ------------------- ACTIONS -------------------
-
-// Add product to cart
-function addToCart(productId, qty = 1, btn) {
-  fetch("/api/cart/", {
-    method: "POST",   // 👈 must be POST
-    credentials: "same-origin",
-    headers: {
-      "Content-Type": "application/json",
-      "X-CSRFToken": csrftoken,
-    },
-    body: JSON.stringify({
-      product: productId,  // 👈 check if your API expects "product" or "product_id"
-      quantity: qty
-    }),
-  })
-    .then(async (res) => {
-      if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(`Server error ${res.status}: ${errText}`);
-      }
-      return res.json();
-    })
-    .then(() => {
-
-      refreshCartCount();
-
-      if (btn) {
-        btn.textContent = "Added";
-        btn.classList.replace("btn-outline-danger", "btn-success");
-        setTimeout(() => {
-          btn.textContent = "Add";
-          btn.classList.replace("btn-success", "btn-outline-danger");
-        }, 1200);
-      }
-    })
-    .catch((err) => {
-      console.error("Add to cart error:", err);
-      alert("Couldn't add to cart → " + err.message);
-    });
-}
-
-
-// Save for later (UI only)
-function saveForLaterUI(btn) {
-  btn.classList.toggle("btn-outline-secondary");
-  btn.classList.toggle("btn-warning");
-}
-
-
-
-// Refresh cart count badge
-function refreshCartCount() {
-  fetch("/api/cart/", { credentials: "same-origin" })
-    .then(res => res.json())
-    .then(data => {
-      const count = data.items ? data.items.length : 0;
-      const el = document.getElementById("cart-count");
-      if (el) el.textContent = count;
-    })
-    .catch(err => console.error("Cart fetch failed", err));
-}
-
-
-
-// ------------------- UI RENDER -------------------
-
-function createProductCard(product) {
-  // Discount %
-  let discount = null;
-  if (
-    product.old_price &&
-    parseFloat(product.old_price) > parseFloat(product.price)
-  ) {
-    discount = Math.round(
-      ((parseFloat(product.old_price) - parseFloat(product.price)) /
-        parseFloat(product.old_price)) *
-        100
-    );
-  }
-
-  // Image
-  let imageUrl = product.image || "/static/images/product-placeholder.png";
-
-  // Pack options
-  const packs =
-    product.highlights && product.highlights.length
-      ? product.highlights
-      : ["500 g", "1 kg", "250 g"];
-
-  // Card wrapper
-  const wrapper = document.createElement("div");
-  wrapper.className = "product-card";
-
-  wrapper.innerHTML = `
-    <div class="img-wrap">
-      ${discount ? `<span class="discount-badge">${discount}% OFF</span>` : ""}
-      <a href="/product/${product.id}/">
-        <img src="${imageUrl}" alt="${product.title}">
-      </a>
-    </div>
-
-    <div class="card-body">
-      <div class="brand">${product.brand || "fresho!"}</div>
-      <a href="/product/${product.id}/" class="title text-truncate">
-        ${product.title}
-      </a>
-
-      <select class="form-select form-select-sm mt-2">
-        ${packs.map((p) => `<option>${p}</option>`).join("")}
-      </select>
-
-      <div class="price-row mt-2">
-        <div class="price-current">₹${product.price}</div>
-        ${
-          product.old_price
-            ? `<div class="price-old">₹${product.old_price}</div>`
-            : ""
-        }
-      </div>
-
-      <button class="sasta-btn btn btn-sm btn-light w-100 mt-2">
-        Har Din Sasta! <span style="float:right">▾</span>
-      </button>
-
-      <div class="bottom-row d-flex justify-content-between align-items-center mt-2">
-        <button class="save-btn btn btn-outline-secondary btn-sm">
-          <i class="bi bi-bookmark"></i>
-        </button>
-        <button class="add-btn btn btn-outline-danger btn-sm" data-product-id="${
-          product.id
-        }">
-          Add
-        </button>
-      </div>
-    </div>
-  `;
-
-  // Events
-  wrapper.querySelector(".add-btn").addEventListener("click", function () {
-    addToCart(product.id, 1, this);
-  });
-
-  wrapper.querySelector(".save-btn").addEventListener("click", function () {
-    saveForLaterUI(this); // UI only
-  });
-
-  return wrapper;
-}
-
-// ------------------- INIT -------------------
-
-document.addEventListener("DOMContentLoaded", function () {
-  const productsRow = document.getElementById("products-row");
-  const prevBtn = document.getElementById("prevBtn");
-  const nextBtn = document.getElementById("nextBtn");
-
-  let currentPage = 0;
-  const itemsPerPage = 4;
-  let cardWidth = 0;
-
-  fetch(PRODUCTS_URL, { credentials: "same-origin" })
-    .then((res) => res.json())
-    .then((products) => {
-      products.forEach((p) => {
-        const card = createProductCard(p);
-        productsRow.appendChild(card);
-      });
-
-     // compute card width dynamically (with margin)
-      const firstCard = productsRow.querySelector(".product-card");
-      const style = window.getComputedStyle(firstCard);
-      const marginRight = parseInt(style.marginRight);
-      const cardWidth = firstCard.offsetWidth + marginRight;
-
-        // fix viewport width = exactly 4 cards
-      const viewport = document.querySelector(".products-viewport");
-      viewport.style.width = cardWidth * itemsPerPage + "px";
-
-        // max pages
-      const maxPage = Math.ceil(products.length / itemsPerPage) - 1;
-
-
-      // Next
-      nextBtn.addEventListener("click", () => {
-        if (currentPage < maxPage) {
-          currentPage++;
-          productsRow.style.transform = `translateX(-${
-            cardWidth * itemsPerPage * currentPage
-          }px)`;
-          prevBtn.disabled = false;
-          if (currentPage === maxPage) nextBtn.disabled = true;
-        }
-      });
-
-      // Prev
-      prevBtn.addEventListener("click", () => {
-        if (currentPage > 0) {
-          currentPage--;
-          productsRow.style.transform = `translateX(-${
-            cardWidth * itemsPerPage * currentPage
-          }px)`;
-          nextBtn.disabled = false;
-          if (currentPage === 0) prevBtn.disabled = true;
-        }
-      });
-    });
-});

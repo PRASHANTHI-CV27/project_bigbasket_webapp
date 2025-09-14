@@ -28,9 +28,7 @@ def home(request):
     return render(request, "index.html")
 
 def cart_view(request):
-    # Only allow customers to view cart
-    if not request.user.is_authenticated or getattr(request.user.profile, "role", None) != "customer":
-        return redirect("/login/")
+    # Allow all users (authenticated or anonymous) to view cart
 
     cart = None
     savings = 0

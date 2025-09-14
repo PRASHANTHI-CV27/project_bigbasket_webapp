@@ -7,4 +7,6 @@ urlpatterns = [
     path('login/', LoginAPIView.as_view(), name='user-login'),
     path('request-otp/', RequestOTPAPIView.as_view(), name='user-request-otp'),
     path('logout/', LogoutView.as_view(), name='logout'),
+    
+
 ]

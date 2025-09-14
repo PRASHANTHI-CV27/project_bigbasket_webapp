@@ -13,33 +13,32 @@
         {% if product.images.all %}
           {% for img in product.images.all %}
             <img src="{{ img.images.url }}" 
+                 data-src="{{ img.images.url }}"
                  class="thumb border mb-2" 
                  style="width:100px; height:100px; object-fit:cover; cursor:pointer;">
           {% endfor %}
         {% else %}
           <img src="{{ product.image.url }}" 
+               data-src="{{ product.image.url }}"
                class="thumb border mb-2" 
                style="width:100px; height:100px; object-fit:cover; cursor:pointer;">
         {% endif %}
       </div>
 
-      <!-- Main image -->
-      <!-- Main image -->
-    <div class="flex-grow-1 text-center border position-relative"
-     style="width:500px; height:400px; display:flex; align-items:center; justify-content:center;">
-    <img id="main-image" src="{{ product.image.url }}" 
-       alt="{{ product.title }}" 
-       style="width:100%; height:100%; object-fit:contain; cursor:crosshair;">
+      <!-- Main image + Zoom -->
+      <div class="flex-grow-1 text-center border position-relative"
+           style="width:500px; height:400px; display:flex; align-items:center; justify-content:center;">
+        <img id="main-image" src="{{ product.image.url }}" 
+             alt="{{ product.title }}" 
+             style="width:100%; height:100%; object-fit:contain; cursor:crosshair;">
 
-  <!-- Zoom Result -->
-    <div id="zoom-result" 
-       class="position-absolute border bg-white d-none" 
-       style="top:0; right:-520px; width:400px; height:400px; overflow:hidden; z-index:10;">
-    <img id="zoomed-image" src="{{ product.image.url }}" 
-         style="position:absolute; width:800px; height:auto;">
-    </div>
-</div>
-
+        <div id="zoom-result" 
+             class="position-absolute border bg-white d-none" 
+             style="top:0; right:-520px; width:400px; height:400px; overflow:hidden; z-index:10;">
+          <img id="zoomed-image" src="{{ product.image.url }}" 
+               style="position:absolute; width:800px; height:auto;">
+        </div>
+      </div>
     </div>
 
     <!-- RIGHT: Product info -->
@@ -58,32 +57,21 @@
         {% endif %}
       </div>
 
-      <!-- Har Din Sasta -->
       <button class="btn btn-light border mb-3">Har Din Sasta! <span class="float-end">▾</span></button>
 
       <!-- Pack Sizes -->
       <h6>Pack Sizes</h6>
       <div class="list-group mb-3">
-        {% if product.highlights %}
-          {% for h in product.highlights %}
-          <label class="list-group-item d-flex justify-content-between align-items-center">
-            <span>{{ h }}</span>
-            <span>₹{{ product.price }}</span>
-            <span class="badge bg-warning">⚡ 9 MINS</span>
-          </label>
-          {% endfor %}
-        {% else %}
-          <label class="list-group-item d-flex justify-content-between align-items-center">
-            <span>500 g</span>
-            <span>₹{{ product.price }}</span>
-            <span class="badge bg-warning">⚡ 9 MINS</span>
-          </label>
-          <label class="list-group-item d-flex justify-content-between align-items-center">
-            <span>1 kg</span>
-            <span>₹{{ product.price }}</span>
-            <span class="badge bg-warning">⚡ 9 MINS</span>
-          </label>
-        {% endif %}
+        <label class="list-group-item d-flex justify-content-between align-items-center">
+          <span>500 g</span>
+          <span>₹{{ product.price }}</span>
+          <span class="badge bg-warning">⚡ 9 MINS</span>
+        </label>
+        <label class="list-group-item d-flex justify-content-between align-items-center">
+          <span>1 kg</span>
+          <span>₹{{ product.price }}</span>
+          <span class="badge bg-warning">⚡ 9 MINS</span>
+        </label>
       </div>
 
       <!-- Buttons -->

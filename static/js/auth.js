@@ -72,41 +72,47 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // Request OTP
-  document.getElementById("requestOtpBtn").addEventListener("click", async () => {
-    const email = document.getElementById("loginEmail").value;
-    if (!email) {
-      showTemporaryMessage("Please enter your email to request OTP.", 3000);
-      return;
-    }
+  // Request OTP
+document.getElementById("requestOtpBtn").addEventListener("click", async () => {
+  const email = document.getElementById("loginEmail").value;
+  if (!email) {
+    showTemporaryMessage("Please enter your email to request OTP.", 3000);
+    return;
+  }
 
-    let res = await fetch("/api/users/request-otp/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": getCookie("csrftoken"),
-      },
-      credentials: "same-origin",
-      body: JSON.stringify({email})
-    });
-
-    let result;
-    try {
-      result = await res.json();
-    } catch (err) {
-      showTemporaryMessage("Failed to request OTP: Invalid server response", 4000);
-      return;
-    }
-
-    if (res.ok) {
-      showTemporaryMessage("OTP sent successfully. Check your email.", 5000);
-      // OTP is no longer returned in response for security
-      if (result.otp) {
-        showTemporaryMessage("Your OTP is: " + result.otp, 7000);
-      }
-    } else {
-      showTemporaryMessage("Failed to request OTP: " + (result.detail || JSON.stringify(result)), 4000);
-    }
+  let res = await fetch("/api/users/request-otp/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCookie("csrftoken"),
+    },
+    credentials: "same-origin",
+    body: JSON.stringify({ email }),
   });
+
+  let result;
+  try {
+    result = await res.json();
+  } catch (err) {
+    showTemporaryMessage("Failed to request OTP: Invalid server response", 4000);
+    return;
+  }
+
+  if (res.ok) {
+    showTemporaryMessage("OTP sent successfully.", 4000);
+
+    // 👇 For development only (show OTP on screen)
+    if (result.otp) {
+      showTemporaryMessage("OTP: " + (result.otp || "Check your email"), 6000);
+    }
+  } else {
+    showTemporaryMessage(
+      "Failed to request OTP: " + (result.detail || JSON.stringify(result)),
+      4000
+    );
+  }
+});
+
 
   // Login
    document.getElementById("loginForm").addEventListener("submit", async (e) => {
@@ -140,6 +146,8 @@ document.addEventListener("DOMContentLoaded", () => {
       showTemporaryMessage("Login successful!", 3000);
       // Save token/session
       localStorage.setItem("token", result.tokens.access);
+      localStorage.setItem("refresh", result.tokens.refresh); // refresh token
+
       // Redirect based on role
       if (result.role === "admin") {
         window.location.href = "/admin/";
@@ -165,6 +173,7 @@ function updateLoginUI() {
       loginBtn.removeAttribute("data-bs-target");
       loginBtn.onclick = () => {
         localStorage.removeItem("token");
+        localStorage.removeItem("refresh");  // ✅ clear refresh token too
         showTemporaryMessage("Logged out successfully", 3000);
         updateLoginUI();
         window.location.href = "/";
@@ -178,14 +187,20 @@ function updateLoginUI() {
   }
 
   // ---- After Login Success ----
-  function handleLoginSuccess(token) {
-    localStorage.setItem("token", token);
-    updateLoginUI();
-    const modal = bootstrap.Modal.getInstance(
-      document.getElementById("authModal")
-    );
-    if (modal) modal.hide();
+ function handleLoginSuccess(tokens) {
+  if (tokens.access) {
+    localStorage.setItem("token", tokens.access);
   }
+  if (tokens.refresh) {
+    localStorage.setItem("refresh", tokens.refresh);
+  }
+  updateLoginUI();
+  const modal = bootstrap.Modal.getInstance(
+    document.getElementById("authModal")
+  );
+  if (modal) modal.hide();
+}
+
 
   // Call on page load
   updateLoginUI();
@@ -219,3 +234,31 @@ function updateLoginUI() {
 
 
 });
+
+async function getAccessToken() {
+  let access = localStorage.getItem("access");
+  const refresh = localStorage.getItem("refresh");
+
+  // If access exists, try it
+  if (access) return access;
+
+  // If no refresh, user must login again
+  if (!refresh) return null;
+
+  // Refresh the token
+  const res = await fetch("/api/token/refresh/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ refresh }),
+  });
+
+  if (res.ok) {
+    const data = await res.json();
+    localStorage.setItem("access", data.access);
+    return data.access;
+  } else {
+    localStorage.removeItem("access");
+    localStorage.removeItem("refresh");
+    return null;
+  }
+}

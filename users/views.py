@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.core.mail import send_mail
 from django.conf import settings
-from django.contrib.auth import get_user_model, authenticate, login, logout
+from django.contrib.auth import get_user_model, authenticate, login as django_login, logout
 from rest_framework_simplejwt.tokens import RefreshToken
 import random
 
@@ -84,6 +84,9 @@ class LoginAPIView(APIView):
     authentication_classes = []
 
     def post(self, request):
+        import logging
+        logger = logging.getLogger(__name__)
+
         email = request.data.get("email")
         otp_code = request.data.get("otp")
 
@@ -103,24 +106,40 @@ class LoginAPIView(APIView):
         except User.DoesNotExist:
             return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        # Issue tokens
-        tokens = get_tokens_for_user(user)
-        role = "admin" if user.is_superuser or user.is_staff else getattr(user.profile, "role", "customer")
+        try:
+            # Create Django session for admin access
+            # Specify backend to avoid ValueError when multiple backends are configured
+            backend = None
+            if hasattr(user, 'backend'):
+                backend = user.backend
+            else:
+                from django.conf import settings
+                backend = settings.AUTHENTICATION_BACKENDS[0]
+            django_login(request, user, backend=backend)
 
-        # Decide dashboard redirect
-        if role == "admin":
-            redirect_url = "/admin/"
-        elif role == "vendor":
-            redirect_url = "/vendors/"
-        else:
-            redirect_url = "/"
+            # Issue tokens
+            tokens = get_tokens_for_user(user)
+            role = "admin" if user.is_superuser or user.is_staff else getattr(user.profile, "role", "customer")
 
-        return Response({
-            "detail": "Login successful",
-            "role": role,
-            "tokens": tokens,
-            "redirect_url": redirect_url,
-        }, status=status.HTTP_200_OK)
+            # Decide dashboard redirect
+            if role == "admin":
+                redirect_url = "/admin/"
+            elif role == "vendor":
+                redirect_url = "/vendors/"
+            else:
+                redirect_url = "/"
+
+            response_data = {
+                "detail": "Login successful",
+                "role": role,
+                "tokens": tokens,
+                "redirect_url": redirect_url,
+            }
+            logger.info(f"Login response data: {response_data}")
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.error(f"Error during login: {e}", exc_info=True)
+            return Response({"detail": "Internal server error during login"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # ------------------------

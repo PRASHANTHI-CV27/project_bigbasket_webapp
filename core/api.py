@@ -22,11 +22,13 @@ from users.models import User
 from core.permissions import (
     IsCustomer, IsVendorOrAdmin, IsProductOwnerOrAdmin, IsOrderViewer,IsVendor,IsAdminUserCustom, IsNotCustomer, IsOrderOwnerOrAdmin
 )
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework import status
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 # -------------------------------
 # Product ViewSet
 # -------------------------------
-from rest_framework_simplejwt.authentication import JWTAuthentication
 
 class ProductViewSet(viewsets.ModelViewSet):
     authentication_classes = [JWTAuthentication]
@@ -70,19 +72,12 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
 # -------------------------------
 # Cart ViewSet
 # -------------------------------
-class CartViewSet(viewsets.ViewSet):
-    """
-    Cart API:
-    - GET /api/cart/           → view cart (anonymous allowed)
-    - POST /api/cart/          → add item (anonymous allowed)
-    - PATCH /api/cart/<id>/    → update quantity (customer only)
-    - DELETE /api/cart/<id>/   → remove item (customer only)
-    """
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.authentication import SessionAuthentication
 
-    def get_permissions(self):
-        if self.action in ['partial_update', 'destroy']:
-            return [IsCustomer()]
-        return [permissions.AllowAny()]
+class CartViewSet(viewsets.ViewSet):
+    authentication_classes = [JWTAuthentication, SessionAuthentication]
+    permission_classes = [AllowAny]
 
     def _get_cart(self, request):
         if request.user.is_authenticated:
@@ -90,21 +85,6 @@ class CartViewSet(viewsets.ViewSet):
         else:
             sid = request.session.session_key or request.session.create() or request.session.session_key
             cart, _ = Cart.objects.get_or_create(session_id=sid)
-
-        # Merge session cart into user cart if logged in
-        if request.user.is_authenticated and cart.session_id and not cart.user:
-            user_cart, _ = Cart.objects.get_or_create(user=request.user)
-            for item in cart.items.all():
-                existing = user_cart.items.filter(product=item.product).first()
-                if existing:
-                    existing.quantity += item.quantity
-                    existing.save()
-                else:
-                    item.cart = user_cart
-                    item.save()
-            cart.delete()
-            cart = user_cart
-
         return cart
 
     def list(self, request):
@@ -128,18 +108,33 @@ class CartViewSet(viewsets.ViewSet):
 
         return Response(CartSerializer(cart, context={'request': request}).data)
 
+    # 🔹 Update item quantity
     def partial_update(self, request, pk=None):
-        item = get_object_or_404(CartItem, pk=pk)
-        qty = int(request.data.get('quantity', item.quantity))
-        item.quantity = qty
-        item.save()
-        return Response(CartItemSerializer(item).data)
+        cart = self._get_cart(request)
+        try:
+            item = cart.items.get(pk=pk)
+        except CartItem.DoesNotExist:
+            return Response({"detail": "Item not found"}, status=status.HTTP_404_NOT_FOUND)
 
+        delta = int(request.data.get("delta", 0))
+        item.quantity += delta
+        if item.quantity <= 0:
+            item.delete()
+        else:
+            item.save()
+
+        return Response(CartSerializer(cart, context={'request': request}).data)
+
+    # 🔹 Remove item
     def destroy(self, request, pk=None):
-        item = get_object_or_404(CartItem, pk=pk)
-        item.delete()
-        return Response({"detail": "Item removed"}, status=status.HTTP_204_NO_CONTENT)
+        cart = self._get_cart(request)
+        try:
+            item = cart.items.get(pk=pk)
+            item.delete()
+        except CartItem.DoesNotExist:
+            return Response({"detail": "Item not found"}, status=status.HTTP_404_NOT_FOUND)
 
+        return Response(CartSerializer(cart, context={'request': request}).data)
 
 # -------------------------------
 # Checkout View

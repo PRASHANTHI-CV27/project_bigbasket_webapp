@@ -1,0 +1,19 @@
+{% extends "vendor_base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Vendor Profile</h2>
+    <div class="card p-3">
+        <h4>{{ vendor.title }}</h4>
+
+        {% if vendor.image %}
+            <img src="{{ vendor.image.url }}" alt="{{ vendor.title }}" style="max-width:200px;">
+        {% endif %}
+
+        <p><strong>Owner:</strong> {{ request.user.username }}</p>
+        <p><strong>Email:</strong> {{ request.user.email }}</p>
+        <p><strong>Description:</strong> {{ vendor.description }}</p>
+        <p><strong>Address:</strong> {{ vendor.address }}</p>
+        <p><strong>Contact:</strong> {{ vendor.contact }}</p>
+    </div>
+</div>
+{% endblock %}

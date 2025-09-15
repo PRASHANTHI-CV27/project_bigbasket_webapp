@@ -55,3 +55,52 @@ function updateCartCount() {
       cartCountEl.textContent = "";
     });
 }
+
+
+
+// function updateLoginUI() {
+//   const token = localStorage.getItem("token");
+//   const userMenu = document.getElementById("user-menu");
+
+//   if (!userMenu) return;
+
+//   if (token) {
+//     // Logged in → profile dropdown
+//     userMenu.innerHTML = `
+//       <div class="dropdown">
+//         <a href="#" class="btn btn-dark dropdown-toggle d-flex align-items-center" 
+//            id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+//           <i class="bi bi-person-circle fs-5"></i>
+//         </a>
+//         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+//           <li><a class="dropdown-item" href="/profile/">Profile</a></li>
+//           <li><a class="dropdown-item" href="/wishlist/">Wishlist</a></li>
+//           <li><a class="dropdown-item" href="/orders/">My Orders</a></li>
+//           <li><hr class="dropdown-divider"></li>
+//           <li><a class="dropdown-item text-danger" href="#" id="logout-btn">Logout</a></li>
+//         </ul>
+//       </div>
+//     `;
+
+//     // Logout handler
+//     document.getElementById("logout-btn").addEventListener("click", () => {
+//       localStorage.removeItem("token");
+//       localStorage.removeItem("refresh");
+//       showTemporaryMessage("Logged out successfully", 3000);
+//       updateLoginUI();
+//       window.location.href = "/";
+//     });
+
+//   } else {
+//     // Logged out → black login button
+//     userMenu.innerHTML = `
+//       <button class="btn btn-dark login-btn" 
+//               type="button" data-bs-toggle="modal" data-bs-target="#authModal">
+//         Login / Signup
+//       </button>
+//     `;
+//   }
+// }
+
+// // Run when page loads
+// document.addEventListener("DOMContentLoaded", updateLoginUI);

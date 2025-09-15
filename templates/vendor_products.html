@@ -1,0 +1,26 @@
+{% extends "vendor_base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <h2>My Products</h2>
+  <a href="{% url 'add-product' %}" class="btn btn-primary mb-3">+ Add Product</a>
+
+  <div class="row">
+    {% for product in products %}
+      <div class="col-md-4 mb-3">
+        <div class="card">
+          <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.title }}">
+          <div class="card-body">
+            <h5>{{ product.title }}</h5>
+            <p>₹{{ product.price }}</p>
+            <p>Stock: {{ product.stock }}</p>
+            <a href="{% url 'edit-product' product.id %}" class="btn btn-sm btn-warning">Edit</a>
+            <a href="{% url 'delete-product' product.id %}" class="btn btn-sm btn-danger">Delete</a>
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <p>No products yet. Add one!</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

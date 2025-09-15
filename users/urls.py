@@ -1,5 +1,6 @@
 # users/urls.py
-from django.urls import path
+from django.urls import path, include
+from . import views
 from .views import SignupAPIView, RequestOTPAPIView, LoginAPIView, LogoutView
 
 urlpatterns = [
@@ -8,5 +9,7 @@ urlpatterns = [
     path('request-otp/', RequestOTPAPIView.as_view(), name='user-request-otp'),
     path('logout/', LogoutView.as_view(), name='logout'),
     
+    
+    path("vendor/", include("users.vendor_urls")),
 
 ]

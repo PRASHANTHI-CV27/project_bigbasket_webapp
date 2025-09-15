@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'users.apps.UsersConfig',
     'core',
+    'django_extensions',
 
 ]
 
@@ -52,10 +53,10 @@ INSTALLED_APPS = [
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-        "rest_framework.authentication.SessionAuthentication",
+        # "rest_framework.authentication.SessionAuthentication",
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',
+        #'rest_framework.permissions.AllowAny',
         "rest_framework.permissions.IsAuthenticated",
     ]
 }
@@ -199,3 +200,9 @@ AUTH_USER_MODEL = "users.User"
 # Razorpay settings
 RAZORPAY_KEY_ID = "test_key"
 RAZORPAY_KEY_SECRET = "test_secret"
+
+
+
+
+# Where collectstatic will put all static files
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')

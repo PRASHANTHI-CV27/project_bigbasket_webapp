@@ -23,6 +23,8 @@ urlpatterns = [
     
     path("checkout/", views.checkout_page, name="checkout"),
     path("orders/", views.orders_page, name="orders"),
+    
+
      
 
     # API endpoints

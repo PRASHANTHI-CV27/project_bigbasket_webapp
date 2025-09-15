@@ -1,0 +1,37 @@
+{% extends "vendor_base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <h2>My Orders</h2>
+
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>Order ID</th>
+        <th>Product</th>
+        <th>Qty</th>
+        <th>Total</th>
+        <th>Status</th>
+        <th>Update</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in orders %}
+      <tr>
+        <td>{{ item.order.invoice_no }}</td>
+        <td>{{ item.item }}</td>
+        <td>{{ item.qty }}</td>
+        <td>₹{{ item.total }}</td>
+        <td>{{ item.item_status }}</td>
+        <td>
+          <a href="{% url 'update-order-status' item.id %}" class="btn btn-sm btn-warning">Change Status</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="6">No orders yet.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -46,7 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
       role: document.getElementById("signupRole").value
     };
 
-    let res = await fetch("/api/users/signup/", {
+    let res = await fetch("/users/signup/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -80,7 +80,7 @@ document.getElementById("requestOtpBtn").addEventListener("click", async () => {
     return;
   }
 
-  let res = await fetch("/api/users/request-otp/", {
+  let res = await fetch("/users/request-otp/", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -124,35 +124,29 @@ document.getElementById("requestOtpBtn").addEventListener("click", async () => {
      const data = { email, otp: credential };
 
 
-    let res = await fetch("/api/users/login/", {
+    let res = await fetch("/users/login/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "X-CSRFToken": getCookie("csrftoken"),
       },
       credentials: "same-origin",
-      body: JSON.stringify(data),
+      body: JSON.stringify({ email, otp: credential }),
+      // body: JSON.stringify(data),
+
     });
 
-    let result;
-    try {
-      result = await res.json();
-    } catch (err) {
-      showTemporaryMessage("Login failed: Invalid server response", 4000);
-      return;
-    }
+    let result = await res.json().catch(() => null);
 
-    if (res.ok) {
+    if (res.ok && result) {
       showTemporaryMessage("Login successful!", 3000);
       // Save token/session
       localStorage.setItem("token", result.tokens.access);
       localStorage.setItem("refresh", result.tokens.refresh); // refresh token
 
       // Redirect based on role
-      if (result.role === "admin") {
-        window.location.href = "/admin/";
-      } else if (result.role === "vendor") {
-        window.location.href = "/vendors/";
+      if (result.redirect_url) {
+        window.location.href = result.redirect_url;
       } else {
         window.location.href = "/";
       }
@@ -161,49 +155,68 @@ document.getElementById("requestOtpBtn").addEventListener("click", async () => {
     }
   });
 
+
+
+
+
+
 function updateLoginUI() {
-    const token = localStorage.getItem("token");
-    const loginBtn = document.querySelector(".login-btn");
+  const token = localStorage.getItem("token");
+  const loginBtn = document.querySelector(".login-btn");
+  const profileDropdown = document.getElementById("profileDropdown");
 
-    if (!loginBtn) return;
+  if (token) {
+    // Hide login/signup button
+    if (loginBtn) loginBtn.classList.add("d-none");
+    // Show profile dropdown
+    if (profileDropdown) profileDropdown.classList.remove("d-none");
 
-    if (token) {
-      loginBtn.textContent = "Logout";
-      loginBtn.removeAttribute("data-bs-toggle");
-      loginBtn.removeAttribute("data-bs-target");
-      loginBtn.onclick = () => {
+    // Attach logout handler
+    const logoutBtn = document.getElementById("logoutBtn");
+    if (logoutBtn) {
+      logoutBtn.onclick = () => {
         localStorage.removeItem("token");
-        localStorage.removeItem("refresh");  // ✅ clear refresh token too
+        localStorage.removeItem("refresh");
         showTemporaryMessage("Logged out successfully", 3000);
         updateLoginUI();
         window.location.href = "/";
       };
-    } else {
-      loginBtn.textContent = "Login / Signup";
-      loginBtn.setAttribute("data-bs-toggle", "modal");
-      loginBtn.setAttribute("data-bs-target", "#authModal");
-      loginBtn.onclick = null;
     }
+  } else {
+    // Show login/signup button
+    if (loginBtn) loginBtn.classList.remove("d-none");
+    // Hide profile dropdown
+    if (profileDropdown) profileDropdown.classList.add("d-none");
   }
-
-  // ---- After Login Success ----
- function handleLoginSuccess(tokens) {
-  if (tokens.access) {
-    localStorage.setItem("token", tokens.access);
-  }
-  if (tokens.refresh) {
-    localStorage.setItem("refresh", tokens.refresh);
-  }
-  updateLoginUI();
-  const modal = bootstrap.Modal.getInstance(
-    document.getElementById("authModal")
-  );
-  if (modal) modal.hide();
 }
 
+updateLoginUI();
 
-  // Call on page load
-  updateLoginUI();
+// document.addEventListener("DOMContentLoaded", updateLoginUI);
+
+
+
+
+
+
+//   // ---- After Login Success ----
+//  function handleLoginSuccess(tokens) {
+//   if (tokens.access) {
+//     localStorage.setItem("token", tokens.access);
+//   }
+//   if (tokens.refresh) {
+//     localStorage.setItem("refresh", tokens.refresh);
+//   }
+//   updateLoginUI();
+//   const modal = bootstrap.Modal.getInstance(
+//     document.getElementById("authModal")
+//   );
+//   if (modal) modal.hide();
+// }
+
+
+//   // Call on page load
+//   updateLoginUI();
 
   // ---- Toggle between Login and Signup ----
   const loginLink = document.getElementById("showLogin");
@@ -236,11 +249,11 @@ function updateLoginUI() {
 });
 
 async function getAccessToken() {
-  let access = localStorage.getItem("access");
+  // let access = localStorage.getItem("access");
   const refresh = localStorage.getItem("refresh");
 
   // If access exists, try it
-  if (access) return access;
+  // if (access) return access;
 
   // If no refresh, user must login again
   if (!refresh) return null;

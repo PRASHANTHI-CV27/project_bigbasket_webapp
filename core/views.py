@@ -7,26 +7,27 @@ from django.contrib.auth.decorators import login_required
 
 
 def home(request):
+    return render(request,"index.html")
     # Redirect users to their respective dashboards based on role
-    if request.user.is_authenticated:
-        role = None
-        if request.user.is_staff or request.user.is_superuser:
-            role = "admin"
-        else:
-            role = getattr(request.user.profile, "role", None)
+    # if request.user.is_authenticated:
+    #     role = None
+    #     if request.user.is_staff or request.user.is_superuser:
+    #         role = "admin"
+    #     else:
+    #         role = getattr(request.user.profile, "role", None)
 
-        if role == "admin":
-            return redirect("/superadmin/")
-        elif role == "vendor":
-            return redirect("/vendors/")
-        elif role == "customer":
-            return render(request, "index.html")
-        else:
-            # Unknown role, logout for safety
-            logout(request)
-            return redirect("/login/")
+    #     if role == "admin":
+    #         return redirect("/superadmin/")
+    #     elif role == "vendor":
+    #         return redirect("/users/vendor/")
+    #     elif role == "customer":
+    #         return render(request, "index.html")
+    #     else:
+    #         # Unknown role, logout for safety
+    #         logout(request)
+    #         return redirect("/login/")
 
-    return render(request, "index.html")
+    # return render(request, "index.html")
 
 def cart_view(request):
     # Allow all users (authenticated or anonymous) to view cart
@@ -75,14 +76,17 @@ def product_detail(request, pk):
 
 
 
-from django.contrib.auth.decorators import login_required
+
 
 @login_required
 def checkout_page(request):
     return render(request, "checkout.html")
 
 
-from django.shortcuts import render
+
 
 def orders_page(request):
     return render(request, "orders.html")
+
+
+

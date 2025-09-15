@@ -16,6 +16,10 @@ header .nav-link {
 header .nav-link:last-child {
   margin-right: 0;  /* remove space after the last item */
 }
+#auth-section {
+  margin-right: 12px;  /* increase space between login and cart */
+}
+
 
 #cart-count {
   font-size: 12px;
@@ -41,7 +45,7 @@ header .nav-link:last-child {
 #categoryDropdown {
   background-color: #6c9e11;   /* BigBasket green */
   border-color: #6c9e11;
-  color: #fff;
+  color: #fdfcfc;
   font-weight: 600;
   padding: 8px 20px;
   border-radius: 4px;
@@ -77,4 +81,28 @@ header .nav-link:last-child {
 
 
 
+/* Strong overrides for dropdown menu */
+.dropdown-menu.user-dropdown {
+  background-color: #000 !important;   /* Black background */
+  min-width: 260px !important;         /* Wider box */
+  padding: 15px 0 !important;          /* Extra space inside */
+  border-radius: 10px !important;      /* Rounded corners */
+}
 
+/* Dropdown items */
+.dropdown-menu.user-dropdown .dropdown-item {
+  color: #fff !important;              /* White text */
+  padding: 14px 22px !important;       /* Larger clickable area */
+  font-size: 16px !important;          /* Bigger text */
+}
+
+/* Hover effect */
+.dropdown-menu.user-dropdown .dropdown-item:hover {
+  background-color: #333 !important;   /* Dark grey hover */
+  color: #fff !important;
+}
+
+/* Divider line */
+.dropdown-menu.user-dropdown .dropdown-divider {
+  border-color: #444 !important;
+}

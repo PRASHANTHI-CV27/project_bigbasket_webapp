@@ -1,0 +1,25 @@
+{% extends "vendor_base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Update Order Status</h2>
+  <form method="POST">
+    {% csrf_token %}
+    <div class="mb-3">
+      <label class="form-label">Product</label>
+      <input type="text" class="form-control" value="{{ order_item.item }}" readonly>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Current Status</label>
+      <select name="item_status" class="form-select">
+        {% for key, value in order_item._meta.get_field('item_status').choices %}
+          <option value="{{ key }}" {% if order_item.item_status == key %}selected{% endif %}>
+            {{ value }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary">Save</button>
+    <a href="{% url 'vendor-orders' %}" class="btn btn-secondary">Cancel</a>
+  </form>
+</div>
+{% endblock %}

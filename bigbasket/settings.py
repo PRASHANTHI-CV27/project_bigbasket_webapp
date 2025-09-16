@@ -9,12 +9,17 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
-
+import environ
 from pathlib import Path
 import os
+from decouple import config
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+# Initialise environment variables
+env = environ.Env()
+environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
+
+
 
 
 # Quick-start development settings - unsuitable for production
@@ -119,6 +124,12 @@ SIMPLE_JWT = {
 }
 
 
+
+
+# Razorpay settings
+RAZORPAY_KEY_ID = "rzp_test_RHwBx6xFUDs2Re"
+RAZORPAY_KEY_SECRET = "7ZbMdxQPpm3mNLGdb2k6QlUT"
+
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
@@ -197,12 +208,12 @@ AUTHENTICATION_BACKENDS = [
 AUTH_USER_MODEL = "users.User"
 
 
-# Razorpay settings
-RAZORPAY_KEY_ID = "test_key"
-RAZORPAY_KEY_SECRET = "test_secret"
+
 
 
 
 
 # Where collectstatic will put all static files
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+

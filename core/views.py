@@ -3,32 +3,22 @@ from django.contrib.auth import logout
 from .serializers import CartSerializer
 from .models import Cart, Product, Vendor
 from django.contrib.auth.decorators import login_required
+from rest_framework import permissions, status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+import razorpay
+from django.conf import settings
+from .models import CartOrder, Payment
+
+
+razorpay_client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+
 
 
 
 def home(request):
     return render(request,"index.html")
-    # Redirect users to their respective dashboards based on role
-    # if request.user.is_authenticated:
-    #     role = None
-    #     if request.user.is_staff or request.user.is_superuser:
-    #         role = "admin"
-    #     else:
-    #         role = getattr(request.user.profile, "role", None)
-
-    #     if role == "admin":
-    #         return redirect("/superadmin/")
-    #     elif role == "vendor":
-    #         return redirect("/users/vendor/")
-    #     elif role == "customer":
-    #         return render(request, "index.html")
-    #     else:
-    #         # Unknown role, logout for safety
-    #         logout(request)
-    #         return redirect("/login/")
-
-    # return render(request, "index.html")
-
+   
 def cart_view(request):
     # Allow all users (authenticated or anonymous) to view cart
 
@@ -87,6 +77,8 @@ def checkout_page(request):
 
 def orders_page(request):
     return render(request, "orders.html")
+
+
 
 
 

@@ -1,5 +1,4 @@
 # core/api.py
-from django.conf import settings
 from rest_framework import viewsets, status, permissions
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
@@ -13,7 +12,7 @@ from rest_framework.decorators import action
 from .models import Product, Category, Cart, CartItem, CartOrder, CartOrderItems, Vendor, Address, Payment
 from .serializers import (
     ProductSerializer, CategorySerializer,
-    CartSerializer, CartItemSerializer, CartOrderSerializer, VendorSerializer, CartOrderItemUpdateSerializer, AddressSerializer, PaymentSerializer
+    CartSerializer, CartItemSerializer, CartOrderSerializer, VendorSerializer, CartOrderItemUpdateSerializer, AddressSerializer, 
 
 )
 from users.serializers import UserSerializer
@@ -26,7 +25,13 @@ from core.permissions import (
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework import status
 from rest_framework_simplejwt.authentication import JWTAuthentication
+
 import razorpay
+from django.conf import settings
+razorpay_client = razorpay.Client(
+    auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET)
+)
+
 
 
 
@@ -144,7 +149,7 @@ class CartViewSet(viewsets.ViewSet):
 # Checkout View
 # -------------------------------
 class CheckoutView(APIView):
-    permission_classes = [IsCustomer]  # ✅ only customers can checkout
+    permission_classes = [IsCustomer]
 
     def post(self, request):
         try:
@@ -157,15 +162,15 @@ class CheckoutView(APIView):
             with transaction.atomic():
                 total_amount = Decimal("0.00")
 
+                # calculate total
                 for ci in items:
                     if not getattr(ci, "product", None):
                         return Response({"detail": f"CartItem {ci.id} missing product"}, status=status.HTTP_400_BAD_REQUEST)
-
                     product_price = Decimal(ci.product.price or ci.price_snapshot or 0)
                     qty = Decimal(ci.quantity or 0)
                     total_amount += product_price * qty
 
-                # create order
+                # create order (not paid yet)
                 invoice = uuid.uuid4().hex[:12].upper()
                 order = CartOrder.objects.create(
                     user=request.user,
@@ -189,20 +194,14 @@ class CheckoutView(APIView):
                         total=Decimal(ci.quantity) * Decimal(product.price if product else (ci.price_snapshot or 0))
                     )
 
-                # clear cart
-                cart.items.all().delete()
+                # ❌ DO NOT clear the cart here
 
                 serializer = CartOrderSerializer(order, context={'request': request})
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         except Exception as e:
             traceback.print_exc()
-            return Response(
-                {"detail": "Internal server error during checkout",
-                 "error": str(e),
-                 "traceback": traceback.format_exc()},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            return Response({"detail": "Internal server error", "error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def _get_cart_for_request(self, request):
         if request.user.is_authenticated:
@@ -210,22 +209,7 @@ class CheckoutView(APIView):
         else:
             sid = request.session.session_key or request.session.create() or request.session.session_key
             cart, _ = Cart.objects.get_or_create(session_id=sid)
-
-        if request.user.is_authenticated and cart.session_id and not cart.user:
-            user_cart, _ = Cart.objects.get_or_create(user=request.user)
-            for item in cart.items.all():
-                existing = user_cart.items.filter(product=item.product).first()
-                if existing:
-                    existing.quantity += item.quantity
-                    existing.save()
-                else:
-                    item.cart = user_cart
-                    item.save()
-            cart.delete()
-            cart = user_cart
-
         return cart
-
 
 # -------------------------------
 # Order ViewSet
@@ -328,47 +312,59 @@ class AddressViewSet(viewsets.ModelViewSet):
         addr.save()
         return Response(self.get_serializer(addr).data, status=status.HTTP_200_OK)
     
-    
-    
-razorpay_client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
-
-
 class CreateRazorpayOrderView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        order_id = request.data.get("order_id")
-        payment_method = request.data.get("method", "razorpay")
-
         try:
-            order = CartOrder.objects.get(id=order_id, user=request.user)
-        except CartOrder.DoesNotExist:
-            return Response({"detail": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
+            order_id = request.data.get("order_id")
+            payment_method = request.data.get("method", "razorpay")
 
-        # ✅ Create Razorpay order
-        razorpay_order = razorpay_client.order.create({
-            "amount": int(order.price * 100),  # Razorpay works in paise
-            "currency": "INR",
-            "payment_capture": "1"
-        })
+            print("👉 CreateRazorpayOrderView called with order_id:", order_id)
 
-        # ✅ Save Payment record
-        payment = Payment.objects.create(
-            order=order,
-            user=request.user,
-            method=payment_method,
-            amount=order.price,
-            status="pending",
-            razorpay_order_id=razorpay_order["id"]
-        )
+            try:
+                order = CartOrder.objects.get(id=order_id, user=request.user)
+            except CartOrder.DoesNotExist:
+                print("❌ Order not found")
+                return Response({"detail": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        return Response({
-            "razorpay_order_id": razorpay_order["id"],
-            "razorpay_amount": razorpay_order["amount"],
-            "razorpay_currency": razorpay_order["currency"],
-            "payment_id": payment.id
-        }, status=status.HTTP_201_CREATED)
+            print("✅ Found order:", order.invoice_no, "amount:", order.price)
 
+            # ✅ Create Razorpay order
+            razorpay_order = razorpay_client.order.create({
+                "amount": int(order.price * 100),  # Razorpay works in paise
+                "currency": "INR",
+                "payment_capture": "1"
+            })
+
+            print("✅ Razorpay order created:", razorpay_order)
+
+            # ✅ Save Payment record
+            payment = Payment.objects.create(
+                order=order,
+                user=request.user,
+                method=payment_method,
+                amount=order.price,
+                status="pending",
+                razorpay_order_id=razorpay_order["id"]
+            )
+
+            return Response({
+                "razorpay_key_id": settings.RAZORPAY_KEY_ID,
+                "razorpay_order_id": razorpay_order["id"],
+                "razorpay_amount": razorpay_order["amount"],
+                "razorpay_currency": razorpay_order["currency"],
+                "payment_id": payment.id
+            }, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            import traceback
+            print("❌ ERROR in CreateRazorpayOrderView:", e)
+            print(traceback.format_exc())
+            return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+   
+    
+   
 
 class VerifyRazorpayPaymentView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -378,13 +374,19 @@ class VerifyRazorpayPaymentView(APIView):
         razorpay_payment_id = request.data.get("razorpay_payment_id")
         razorpay_order_id = request.data.get("razorpay_order_id")
         razorpay_signature = request.data.get("razorpay_signature")
+        
+        print("🔎 VerifyRazorpayPaymentView called with:")
+        print("payment_id:", payment_id)
+        print("razorpay_payment_id:", razorpay_payment_id)
+        print("razorpay_order_id:", razorpay_order_id)
+        print("razorpay_signature:", razorpay_signature)
+        
 
         try:
             payment = Payment.objects.get(id=payment_id, user=request.user)
         except Payment.DoesNotExist:
             return Response({"detail": "Payment not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        # ✅ Verify signature
         params_dict = {
             "razorpay_order_id": razorpay_order_id,
             "razorpay_payment_id": razorpay_payment_id,
@@ -392,15 +394,22 @@ class VerifyRazorpayPaymentView(APIView):
         }
 
         try:
+            # ✅ verify signature
             razorpay_client.utility.verify_payment_signature(params_dict)
+
+            # update payment + order
             payment.status = "success"
             payment.razorpay_payment_id = razorpay_payment_id
             payment.razorpay_signature = razorpay_signature
             payment.save()
 
-            # Mark order as paid
             payment.order.paid_status = True
             payment.order.save()
+
+            # ✅ clear cart now only if payment succeeded
+            cart = Cart.objects.filter(user=request.user).first()
+            if cart:
+                cart.items.all().delete()
 
             return Response({"detail": "Payment successful"}, status=status.HTTP_200_OK)
 

@@ -3,7 +3,9 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from . import views
 
-from .api import ProductViewSet, CategoryViewSet, CartViewSet, CheckoutView, OrderViewSet, VendorViewSet, UserViewSet, AddressViewSet,CreateRazorpayOrderView, VerifyRazorpayPaymentView
+from .api import ProductViewSet, CategoryViewSet, CartViewSet, CheckoutView, OrderViewSet, VendorViewSet, UserViewSet, AddressViewSet
+from core.api import CreateRazorpayOrderView, VerifyRazorpayPaymentView
+
 
 router = DefaultRouter()
 router.register(r'products', ProductViewSet, basename='product')
@@ -31,6 +33,7 @@ urlpatterns = [
     path('api/', include(router.urls)),
     path('api/checkout/', CheckoutView.as_view(), name='api-checkout'),
     
-    path("api/payment/create/", CreateRazorpayOrderView.as_view(), name="create-payment"),
-    path("api/payment/verify/", VerifyRazorpayPaymentView.as_view(), name="verify-payment"),
+    path("api/payments/create-razorpay-order/", CreateRazorpayOrderView.as_view(), name="create-razorpay-order"),
+    path("api/payments/verify-razorpay-payment/", VerifyRazorpayPaymentView.as_view(), name="verify-razorpay-payment"),
+
 ]

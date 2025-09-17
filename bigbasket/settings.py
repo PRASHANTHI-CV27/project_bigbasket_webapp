@@ -9,15 +9,23 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
-import environ
+
 from pathlib import Path
+from datetime import timedelta
 import os
-from decouple import config
+
+
+from dotenv import load_dotenv
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-# Initialise environment variables
-env = environ.Env()
-environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
+
+load_dotenv(BASE_DIR / ".env")
+
+RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID")
+RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET")
+
+
 
 
 
@@ -116,7 +124,7 @@ DATABASES = {
     }
 }
 
-from datetime import timedelta
+
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),   # tokens valid for 1 hour
@@ -125,10 +133,6 @@ SIMPLE_JWT = {
 
 
 
-
-# Razorpay settings
-RAZORPAY_KEY_ID = "rzp_test_RHwBx6xFUDs2Re"
-RAZORPAY_KEY_SECRET = "7ZbMdxQPpm3mNLGdb2k6QlUT"
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators

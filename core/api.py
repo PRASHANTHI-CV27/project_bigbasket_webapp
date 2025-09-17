@@ -12,7 +12,7 @@ from rest_framework.decorators import action
 from .models import Product, Category, Cart, CartItem, CartOrder, CartOrderItems, Vendor, Address, Payment
 from .serializers import (
     ProductSerializer, CategorySerializer,
-    CartSerializer, CartItemSerializer, CartOrderSerializer, VendorSerializer, CartOrderItemUpdateSerializer, AddressSerializer, 
+    CartSerializer, CartItemSerializer, CartOrderSerializer, VendorSerializer, CartOrderItemUpdateSerializer, AddressSerializer, PaymentSerializer
 
 )
 from users.serializers import UserSerializer
@@ -26,11 +26,13 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework import status
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
+
 import razorpay
 from django.conf import settings
-razorpay_client = razorpay.Client(
-    auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET)
-)
+import logging
+
+
+
 
 
 
@@ -312,38 +314,37 @@ class AddressViewSet(viewsets.ModelViewSet):
         addr.save()
         return Response(self.get_serializer(addr).data, status=status.HTTP_200_OK)
     
+    
+logger = logging.getLogger(__name__)   
+    
+
 class CreateRazorpayOrderView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         try:
             order_id = request.data.get("order_id")
-            payment_method = request.data.get("method", "razorpay")
+            order = CartOrder.objects.get(id=order_id, user=request.user)
 
-            print("👉 CreateRazorpayOrderView called with order_id:", order_id)
+            amount_in_paise = int(order.price * 100)
 
-            try:
-                order = CartOrder.objects.get(id=order_id, user=request.user)
-            except CartOrder.DoesNotExist:
-                print("❌ Order not found")
-                return Response({"detail": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
-
-            print("✅ Found order:", order.invoice_no, "amount:", order.price)
+            # ✅ Always create fresh client
+            client = razorpay.Client(
+                auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET)
+            )
 
             # ✅ Create Razorpay order
-            razorpay_order = razorpay_client.order.create({
-                "amount": int(order.price * 100),  # Razorpay works in paise
+            razorpay_order = client.order.create({
+                "amount": 5000,
                 "currency": "INR",
                 "payment_capture": "1"
             })
-
-            print("✅ Razorpay order created:", razorpay_order)
 
             # ✅ Save Payment record
             payment = Payment.objects.create(
                 order=order,
                 user=request.user,
-                method=payment_method,
+                method="razorpay",
                 amount=order.price,
                 status="pending",
                 razorpay_order_id=razorpay_order["id"]
@@ -357,14 +358,11 @@ class CreateRazorpayOrderView(APIView):
                 "payment_id": payment.id
             }, status=status.HTTP_201_CREATED)
 
+        except CartOrder.DoesNotExist:
+            return Response({"detail": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            import traceback
-            print("❌ ERROR in CreateRazorpayOrderView:", e)
-            print(traceback.format_exc())
             return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-   
-    
-   
+
 
 class VerifyRazorpayPaymentView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -374,13 +372,6 @@ class VerifyRazorpayPaymentView(APIView):
         razorpay_payment_id = request.data.get("razorpay_payment_id")
         razorpay_order_id = request.data.get("razorpay_order_id")
         razorpay_signature = request.data.get("razorpay_signature")
-        
-        print("🔎 VerifyRazorpayPaymentView called with:")
-        print("payment_id:", payment_id)
-        print("razorpay_payment_id:", razorpay_payment_id)
-        print("razorpay_order_id:", razorpay_order_id)
-        print("razorpay_signature:", razorpay_signature)
-        
 
         try:
             payment = Payment.objects.get(id=payment_id, user=request.user)
@@ -394,10 +385,14 @@ class VerifyRazorpayPaymentView(APIView):
         }
 
         try:
-            # ✅ verify signature
-            razorpay_client.utility.verify_payment_signature(params_dict)
+             # ✅ Create client fresh each time
+            client = razorpay.Client(
+                auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET)
+            )
+            
+            client.utility.verify_payment_signature(params_dict)
 
-            # update payment + order
+            # Update payment and order status
             payment.status = "success"
             payment.razorpay_payment_id = razorpay_payment_id
             payment.razorpay_signature = razorpay_signature
@@ -406,14 +401,31 @@ class VerifyRazorpayPaymentView(APIView):
             payment.order.paid_status = True
             payment.order.save()
 
-            # ✅ clear cart now only if payment succeeded
-            cart = Cart.objects.filter(user=request.user).first()
-            if cart:
-                cart.items.all().delete()
+            # ✅ clear cart logic here
+            Cart.objects.filter(user=request.user).delete()
 
-            return Response({"detail": "Payment successful"}, status=status.HTTP_200_OK)
+            # Serialize the updated payment object for a clean response
+            serializer = PaymentSerializer(payment)
+            return Response(serializer.data, status=status.HTTP_200_OK)
 
         except razorpay.errors.SignatureVerificationError:
             payment.status = "failed"
             payment.save()
-            return Response({"detail": "Payment verification failed"}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Serialize the failed payment object
+            serializer = PaymentSerializer(payment)
+            return Response({"detail": "Payment verification failed", "payment": serializer.data}, 
+                            status=status.HTTP_400_BAD_REQUEST
+                            )
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    
+    
+    
+    
+    
+    
+
+    
+    

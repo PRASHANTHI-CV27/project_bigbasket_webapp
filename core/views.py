@@ -11,8 +11,6 @@ from django.conf import settings
 from .models import CartOrder, Payment
 
 
-razorpay_client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
-
 
 
 

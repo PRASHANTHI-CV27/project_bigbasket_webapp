@@ -1,112 +1,44 @@
+{% extends "base.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Checkout</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-  <link rel="stylesheet" href="{% static 'css/checkout.css' %}">
-</head>
-<body class="bg-light">
-
-  <!-- ================= HEADER ================= -->
-  <header class="bg-success text-white py-3">
-    <div class="container d-flex align-items-center justify-content-center gap-4">
-      <img src="{% static 'images/logo.png' %}" alt="BigBasket Logo" class="me-3" style="height:40px;">
-      <div>
-        <span class="fw-bold me-2">Delivery Address:</span>
-        <span id="default-address">Loading...</span>
-        <button id="change-address" class="btn btn-sm btn-outline-light ms-2" data-bs-toggle="modal" data-bs-target="#addressModal">Change</button>
-      </div>
-      <div>
-        <span class="fw-bold">Payment Options</span>
-        <small class="d-block">Pay order amount by selecting a mode</small>
-      </div>
-    </div>
-  </header>
-
-  <!-- ================= MAIN ================= -->
-  <main class="container my-4">
-    <div class="row g-4">
-      
-      <!-- LEFT SECTION (Payments) -->
-      <div class="col-lg-8">
-        <div class="card shadow-sm">
-          <div class="card-body">
-            <h5 class="mb-3">Payment Options</h5>
-            <ul class="list-group methods-list">
-              {# COD is disabled for now #}
-              {# <li class="list-group-item d-flex align-items-center active" data-method="cod">
-                <i class="bi bi-cash-coin me-2 text-success"></i> Cash on Delivery
-              </li> #}
-              <li class="list-group-item d-flex align-items-center active" data-method="razorpay">
-                <i class="bi bi-credit-card-2-front-fill me-2 text-primary"></i> Pay with Razorpay
-              </li>
-              <li class="list-group-item d-flex align-items-center text-muted">
-                <i class="bi bi-bank me-2"></i> Net Banking
-              </li>
-              <li class="list-group-item d-flex align-items-center text-muted">
-                <i class="bi bi-phone me-2"></i> UPI / PhonePe
-              </li>
-              <li class="list-group-item d-flex align-items-center text-muted">
-                <i class="bi bi-wallet2 me-2"></i> Wallets
-              </li>
-            </ul>
-
-            <div class="mt-4">
-              <!-- Razorpay -->
-              <div id="razorpay-form" class="method-content active">
-                <button id="proceed-pay-razor" class="btn btn-primary w-100">Pay with Razorpay</button>
-              </div>
-            </div>
-          </div>
+{% block content %}
+<div class="container my-5">
+  <div class="row">
+    <!-- Left side: Order Summary -->
+    <div class="col-md-6 offset-md-3">
+      <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">Order Summary</h5>
         </div>
-      </div>
-
-      <!-- RIGHT SECTION (Summary) -->
-      <div class="col-lg-4">
-        <div class="card shadow-sm">
-          <div class="card-body">
-            <h5>Coupon</h5>
-            <div class="form-check">
-              <input class="form-check-input" type="checkbox" id="apply-coupon">
-              <label class="form-check-label" for="apply-coupon">Apply 5% OFF on order</label>
-            </div>
-            <hr>
-            <h5>Order Summary</h5>
-            <div id="order-items"></div>
-            <hr>
-            <p><strong>Subtotal</strong> <span class="float-end" id="subtotal">₹0</span></p>
-            <p>Delivery <span class="float-end" id="delivery">₹20</span></p>
-            <p class="text-success">Coupon Savings <span class="float-end" id="savings">-₹0</span></p>
-            <hr>
-            <p class="fw-bold">Total Amount Payable <span class="float-end" id="total">₹0</span></p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </main>
-
-  <!-- ================= MODAL ================= -->
-  <div class="modal fade" id="addressModal" tabindex="-1">
-    <div class="modal-dialog">
-      <div class="modal-content p-3">
-        <h5>Update Address</h5>
-        <input id="address-input" type="text" class="form-control mb-2" placeholder="Address">
-        <input id="pincode-input" type="text" class="form-control mb-2" placeholder="Pincode">
-        <input id="country-input" type="text" class="form-control mb-2" placeholder="Country">
-        <div class="d-flex justify-content-end">
-          <button id="save-address" class="btn btn-success me-2">Save</button>
-          <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <div class="card-body">
+          <table class="table">
+            <tr>
+              <td>Subtotal</td>
+              <td class="text-end">₹<span id="subtotal">0</span></td>
+            </tr>
+            <tr>
+              <td>Delivery Fee</td>
+              <td class="text-end">₹<span id="delivery">0</span></td>
+            </tr>
+            <tr>
+              <td>Savings</td>
+              <td class="text-end text-success">-₹<span id="savings">0</span></td>
+            </tr>
+            <tr class="fw-bold">
+              <td>Total</td>
+              <td class="text-end">₹<span id="total">0</span></td>
+            </tr>
+          </table>
+          <button id="proceed-pay-razor" class="btn btn-success w-100">
+            Proceed to Pay with Razorpay
+          </button>
         </div>
       </div>
     </div>
   </div>
+</div>
+{% endblock %}
 
-  <!-- ================= SCRIPTS ================= -->
-  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-  <script src="{% static 'js/checkout.js' %}"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+{% block extra_js %}
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="{% static 'js/checkout.js' %}"></script>
+{% endblock %}

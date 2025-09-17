@@ -166,56 +166,24 @@ class AddressSerializer(serializers.ModelSerializer):
         read_only_fields = ["id"]
 
 
-
-# core/serializers.py
-
-
 class PaymentSerializer(serializers.ModelSerializer):
-    # ensure frontend passes order id; we validate ownership below
-    order = serializers.PrimaryKeyRelatedField(queryset=CartOrder.objects.all())
-
+    """
+    Serializer for the Payment model.
+    """
     class Meta:
         model = Payment
         fields = [
-            "id", "order", "user", "method", "amount", "status",
-            "razorpay_order_id", "razorpay_payment_id", "razorpay_signature", "created_at"
+            'id',
+            'order',
+            'user',
+            'amount',
+            'method',
+            'status',
+            'razorpay_order_id',
+            'razorpay_payment_id',
+            'razorpay_signature'
         ]
-        # these should never be set by the client
-        extra_kwargs = {
-            "user": {"read_only": True},
-            "amount": {"read_only": True},
-            "status": {"read_only": True},
-            "razorpay_order_id": {"read_only": True},
-            "razorpay_payment_id": {"read_only": True},
-            "razorpay_signature": {"read_only": True},
-            "created_at": {"read_only": True},
-        }
+        read_only_fields = ['id', 'user', 'razorpay_order_id', 'razorpay_payment_id', 'razorpay_signature']
 
-    def validate_order(self, value):
-        """
-        Make sure the order belongs to the requesting user and isn't already paid.
-        """
-        request = self.context.get("request")
-        if request is None:
-            return value
-        # order.user must match logged-in user
-        if value.user != request.user:
-            raise serializers.ValidationError("Order does not belong to the current user.")
-        # prevent creating a payment if order already paid
-        if value.paid_status:
-            raise serializers.ValidationError("This order is already paid.")
-        return value
 
-    def create(self, validated_data):
-        """
-        Set user and amount from server-side data (not from client).
-        """
-        request = self.context.get("request")
-        user = request.user if request else None
 
-        order = validated_data.get("order")
-        # Force amount from order.price (don't trust client)
-        validated_data["amount"] = order.price
-        validated_data["user"] = user
-        # status will default to 'pending' from model
-        return super().create(validated_data)

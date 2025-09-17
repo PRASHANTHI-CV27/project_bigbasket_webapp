@@ -33,7 +33,12 @@ urlpatterns = [
     path('api/', include(router.urls)),
     path('api/checkout/', CheckoutView.as_view(), name='api-checkout'),
     
-    path("api/payments/create-razorpay-order/", CreateRazorpayOrderView.as_view(), name="create-razorpay-order"),
-    path("api/payments/verify-razorpay-payment/", VerifyRazorpayPaymentView.as_view(), name="verify-razorpay-payment"),
+
+    path('api/payments/create-razorpay-order/', CreateRazorpayOrderView.as_view(), name='create-razorpay-order'),
+    path('api/payments/verify-razorpay-payment/', VerifyRazorpayPaymentView.as_view(), name='verify-razorpay-payment'),
+    
+    # path("api/payments/test-razorpay/", TestRazorpayOrderView.as_view(), name="test-razorpay")
 
 ]
+
+
